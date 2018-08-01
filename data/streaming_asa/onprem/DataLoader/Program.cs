@@ -17,7 +17,7 @@
     class Program
     {
 
-        private static CancellationTokenSource cts = new CancellationTokenSource();
+        private static CancellationTokenSource cts;
         private static async Task ReadData<T>(ICollection<string> pathList, Func<string, string, T> factory,
             ObjectPool<EventHubClient> pool, int randomSeed, AsyncConsole console, int waittime, DataFormat dataFormat)
             where T : TaxiData
@@ -85,51 +85,61 @@
 
             long messages = 0;
 
+            List<Task> taskList = new List<Task>();
 
             var readTask = Task.Factory.StartNew(
                  async () =>
                  {
-
-
                      // iterate through the path list and act on each file from here on
                      foreach (var path in pathList)
                      {
-                         ZipArchive archive = new ZipArchive(
-                             File.OpenRead(path),
-                             ZipArchiveMode.Read);
-
-                         foreach (var entry in archive.Entries)
+                         using (var archive = new ZipArchive(File.OpenRead(path),
+                                                     ZipArchiveMode.Read))
                          {
-                             using (var reader = new StreamReader(entry.Open()))
+                             foreach (var entry in archive.Entries)
                              {
-
-                                 var header = reader.ReadLines()
-                                     .First();
-                                 // Start consumer
-                                 var lines = reader.ReadLines()
-                                      .Skip(1);
-
-
-                                 // for each line , send to event hub
-                                 foreach (var line in lines)
+                                 using (var reader = new StreamReader(entry.Open()))
                                  {
-                                     // proceed only if previous send operation is succesful.
-                                     // cancelation is requested in case if send fails .
-                                     if (!cts.IsCancellationRequested)
+
+                                     var header = reader.ReadLines()
+                                         .First();
+                                     // Start consumer
+                                     var lines = reader.ReadLines()
+                                          .Skip(1);
+
+
+                                     // for each line , send to event hub
+                                     foreach (var line in lines)
                                      {
-                                         await buffer.SendAsync(factory(line, header)).ConfigureAwait(false);
-                                         if (++messages % 10000 == 0)
+                                         // proceed only if previous send operation is succesful.
+                                         // cancelation is requested in case if send fails .
+                                         if (!cts.IsCancellationRequested)
                                          {
-                                             // random delay every 10000 messages are buffered ??
-                                             await Task.Delay(random.Next(100, 1000))
-                                                  .ConfigureAwait(false);
-                                             await console.WriteLine($"Created {messages} records for {typeName}").ConfigureAwait(false);
+                                             await buffer.SendAsync(factory(line, header)).ConfigureAwait(false);
+                                             if (++messages % 10000 == 0)
+                                             {
+                                                 // random delay every 10000 messages are buffered ??
+                                                 await Task.Delay(random.Next(100, 1000))
+                                                      .ConfigureAwait(false);
+                                                 await console.WriteLine($"Created {messages} records for {typeName}").ConfigureAwait(false);
+                                             }
+
+                                             if (messages % 50000 == 0)
+                                             {
+                                                 throw new Exception("my test exception");
+                                             }
+
+                                         }
+                                         else
+                                         {
+                                             break;
                                          }
                                      }
-                                     else
-                                     {
-                                         break;
-                                     }
+                                 }
+
+                                 if (cts.IsCancellationRequested)
+                                 {
+                                     break;
                                  }
                              }
 
@@ -139,30 +149,33 @@
                              }
                          }
 
-                         if (cts.IsCancellationRequested)
-                         {
-                             break;
-                         }
+                         buffer.Complete();
+                         await Task.WhenAll(buffer.Completion, consumer.Completion);
+                         await console.WriteLine($"Created total {messages} records for {typeName}").ConfigureAwait(false);
                      }
-
-                     buffer.Complete();
-                     await Task.WhenAll(buffer.Completion, consumer.Completion);
-                     await console.WriteLine($"Created total {messages} records for {typeName}").ConfigureAwait(false);
                  }
-             );
+             ).Unwrap();
 
-            // await on consumer completion. Incase if sending is failed at any moment ,
-            // execption is thrown and caught . This is used to signal the cancel the reading operation and abort all activity further
-            try
+
+            taskList.Add(readTask);
+            taskList.Add(consumer.Completion);
+
+            foreach (var task in taskList)
             {
-                await consumer.Completion;
+                task.ContinueWith(completed =>
+                {
+                    switch (completed.Status)
+                    {
+                        case TaskStatus.RanToCompletion:
+                            break;
+                        case TaskStatus.Faulted:
+                            cts.Cancel();
+                            console.WriteLine(completed.Exception.InnerException.Message);
+                            break;
+                    }
+                }, TaskScheduler.Default);
             }
-            catch (Exception ex)
-            {
-                cts.Cancel();
-                await console.WriteLine(ex.Message);
-                await console.WriteLine($"failed to send data records for {typeName}").ConfigureAwait(false);
-            }
+
         }
 
 
@@ -182,7 +195,9 @@
             var numberOfMillisecondsToLead = (int.TryParse(Environment.GetEnvironmentVariable("MINUTES_TO_LEAD"), out int outputMinutesToLead) ? outputMinutesToLead : 0) * 60000;
             var pushRideDataFirst = bool.TryParse(Environment.GetEnvironmentVariable("PUSH_RIDE_DATA_FIRST"), out Boolean outputPushRideDataFirst) ? outputPushRideDataFirst : false;
 
-
+            rideConnectionString = "Endpoint=sb://asafinal1runcosmosdatabaseeventhub.servicebus.windows.net/;SharedAccessKeyName=taxi-ride-asa-access-policy;SharedAccessKey=+RmZNmhKdEuHQo8E8Niju54XiN/LFeKjHuiGx43c0aQ=;EntityPath=taxi-ride";
+            fareConnectionString = "Endpoint=sb://asafinalruncosmosdatabaseeventhub.servicebus.windows.net/;SharedAccessKeyName=taxi-fare-asa-access-policy;SharedAccessKey=BvFCHLegnzKM6FRWoJFm227DM0vSNoIMXDaoxj+qPwU=;EntityPath=taxi-fare";
+            rideDataFilePath = "D:\\reference-architectures\\data\\streaming_asa\\onperm\\DataFile";
             if (string.IsNullOrWhiteSpace(rideConnectionString))
             {
                 throw new ArgumentException("rideConnectionString must be provided");
@@ -292,6 +307,8 @@
                     arguments.FareConnectionString
                 );
 
+                cts = arguments.MillisecondsToRun == 0 ? new CancellationTokenSource() : new CancellationTokenSource(arguments.MillisecondsToRun);
+
                 Console.CancelKeyPress += (s, e) =>
                 {
                     //Console.WriteLine("Cancelling data generation");
@@ -341,6 +358,11 @@
             {
                 Console.WriteLine(ae.Message);
                 return 1;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return 2;
             }
 
             return 0;
