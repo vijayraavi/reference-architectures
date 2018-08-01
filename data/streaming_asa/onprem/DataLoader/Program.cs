@@ -66,7 +66,21 @@
                     using (var client = pool.GetObject())
                     {
                         return client.Value.SendAsync(new EventData(Encoding.UTF8.GetBytes(
-                            t.GetData(dataFormat))), t.PartitionKey);
+                            t.GetData(dataFormat))), t.PartitionKey).ContinueWith(
+                                task =>
+                                {
+                                    switch (task.Status)
+                                    {
+                                        case TaskStatus.Faulted:
+                                            cts.Cancel();
+                                            console.WriteLine(task.Exception.InnerException.Message);
+                                            console.WriteLine($"failed to send files for {typeName}");
+                                            throw task.Exception;
+
+                                        case TaskStatus.RanToCompletion: break;
+                                    }
+                                }
+                            );
                     }
                 },
                 new ExecutionDataflowBlockOptions
@@ -90,53 +104,47 @@
             var readTask = Task.Factory.StartNew(
                  async () =>
                  {
-                     try
+                     //  try
+                     //  {
+                     // iterate through the path list and act on each file from here on
+                     foreach (var path in pathList)
                      {
-                         // iterate through the path list and act on each file from here on
-                         foreach (var path in pathList)
+                         using (var archive = new ZipArchive(File.OpenRead(path),
+                                                     ZipArchiveMode.Read))
                          {
-                             using (var archive = new ZipArchive(File.OpenRead(path),
-                                                         ZipArchiveMode.Read))
+                             foreach (var entry in archive.Entries)
                              {
-                                 foreach (var entry in archive.Entries)
+                                 using (var reader = new StreamReader(entry.Open()))
                                  {
-                                     using (var reader = new StreamReader(entry.Open()))
+
+                                     var header = reader.ReadLines()
+                                         .First();
+                                     // Start consumer
+                                     var lines = reader.ReadLines()
+                                          .Skip(1);
+
+
+                                     // for each line , send to event hub
+                                     foreach (var line in lines)
                                      {
-
-                                         var header = reader.ReadLines()
-                                             .First();
-                                         // Start consumer
-                                         var lines = reader.ReadLines()
-                                              .Skip(1);
-
-
-                                         // for each line , send to event hub
-                                         foreach (var line in lines)
+                                         // proceed only if previous send operation is succesful.
+                                         // cancelation is requested in case if send fails .
+                                         if (!cts.IsCancellationRequested)
                                          {
-                                             // proceed only if previous send operation is succesful.
-                                             // cancelation is requested in case if send fails .
-                                             if (!cts.IsCancellationRequested)
+                                             await buffer.SendAsync(factory(line, header)).ConfigureAwait(false);
+                                             if (++messages % 10000 == 0)
                                              {
-                                                 await buffer.SendAsync(factory(line, header)).ConfigureAwait(false);
-                                                 if (++messages % 10000 == 0)
-                                                 {
-                                                     // random delay every 10000 messages are buffered ??
-                                                     await Task.Delay(random.Next(100, 1000))
-                                                          .ConfigureAwait(false);
-                                                     await console.WriteLine($"Created {messages} records for {typeName}").ConfigureAwait(false);
-                                                 }
+                                                 // random delay every 10000 messages are buffered ??
+                                                 await Task.Delay(random.Next(100, 1000))
+                                                      .ConfigureAwait(false);
+                                                 await console.WriteLine($"Created {messages} records for {typeName}").ConfigureAwait(false);
+                                             }
 
-                                             }
-                                             else
-                                             {
-                                                 break;
-                                             }
                                          }
-                                     }
-
-                                     if (cts.IsCancellationRequested)
-                                     {
-                                         break;
+                                         else
+                                         {
+                                             break;
+                                         }
                                      }
                                  }
 
@@ -146,20 +154,32 @@
                                  }
                              }
 
-                             buffer.Complete();
-                             await Task.WhenAll(buffer.Completion, consumer.Completion);
-                             await console.WriteLine($"Created total {messages} records for {typeName}").ConfigureAwait(false);
+                             if (cts.IsCancellationRequested)
+                             {
+                                 break;
+                             }
                          }
-                     }
-                     catch (Exception ex)
-                     {
-                        cts.Cancel();
-                        await console.WriteLine($"failed to read files for {typeName}").ConfigureAwait(false);
-                        await console.WriteLine(ex.Message).ConfigureAwait(false);
-                        throw ex;
+
+                         buffer.Complete();
+                         await Task.WhenAll(buffer.Completion, consumer.Completion);
+                         await console.WriteLine($"Created total {messages} records for {typeName}").ConfigureAwait(false);
                      }
                  }
-             ).Unwrap();
+             ).Unwrap().ContinueWith(
+                                task =>
+                                {
+                                    switch (task.Status)
+                                    {
+                                        case TaskStatus.Faulted:
+                                            cts.Cancel();
+                                            console.WriteLine($"failed to read files for {typeName}").ConfigureAwait(false);
+                                            console.WriteLine(task.Exception.InnerException.Message);
+                                            throw task.Exception;
+
+                                        case TaskStatus.RanToCompletion: break;
+                                    }
+                                }
+                            ); ;
 
 
             // await on consumer completion. Incase if sending is failed at any moment ,
@@ -167,11 +187,12 @@
 
             try
             {
-                await consumer.Completion;
+                await Task.WhenAll(consumer.Completion, readTask);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 cts.Cancel();
+                await console.WriteLine(ex.Message).ConfigureAwait(false);
                 await console.WriteLine($"failed to send files for {typeName}").ConfigureAwait(false);
             }
 
@@ -193,6 +214,7 @@
             var numberOfMillisecondsToRun = (int.TryParse(Environment.GetEnvironmentVariable("SECONDS_TO_RUN"), out int outputSecondToRun) ? outputSecondToRun : 0) * 1000;
             var numberOfMillisecondsToLead = (int.TryParse(Environment.GetEnvironmentVariable("MINUTES_TO_LEAD"), out int outputMinutesToLead) ? outputMinutesToLead : 0) * 60000;
             var pushRideDataFirst = bool.TryParse(Environment.GetEnvironmentVariable("PUSH_RIDE_DATA_FIRST"), out Boolean outputPushRideDataFirst) ? outputPushRideDataFirst : false;
+
 
             if (string.IsNullOrWhiteSpace(rideConnectionString))
             {
