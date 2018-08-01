@@ -124,11 +124,6 @@
                                                  await console.WriteLine($"Created {messages} records for {typeName}").ConfigureAwait(false);
                                              }
 
-                                             if (messages % 50000 == 0)
-                                             {
-                                                 throw new Exception("my test exception");
-                                             }
-
                                          }
                                          else
                                          {
@@ -195,9 +190,6 @@
             var numberOfMillisecondsToLead = (int.TryParse(Environment.GetEnvironmentVariable("MINUTES_TO_LEAD"), out int outputMinutesToLead) ? outputMinutesToLead : 0) * 60000;
             var pushRideDataFirst = bool.TryParse(Environment.GetEnvironmentVariable("PUSH_RIDE_DATA_FIRST"), out Boolean outputPushRideDataFirst) ? outputPushRideDataFirst : false;
 
-            rideConnectionString = "Endpoint=sb://asafinal1runcosmosdatabaseeventhub.servicebus.windows.net/;SharedAccessKeyName=taxi-ride-asa-access-policy;SharedAccessKey=+RmZNmhKdEuHQo8E8Niju54XiN/LFeKjHuiGx43c0aQ=;EntityPath=taxi-ride";
-            fareConnectionString = "Endpoint=sb://asafinalruncosmosdatabaseeventhub.servicebus.windows.net/;SharedAccessKeyName=taxi-fare-asa-access-policy;SharedAccessKey=BvFCHLegnzKM6FRWoJFm227DM0vSNoIMXDaoxj+qPwU=;EntityPath=taxi-fare";
-            rideDataFilePath = "D:\\reference-architectures\\data\\streaming_asa\\onperm\\DataFile";
             if (string.IsNullOrWhiteSpace(rideConnectionString))
             {
                 throw new ArgumentException("rideConnectionString must be provided");
