@@ -69,17 +69,11 @@
                             t.GetData(dataFormat))), t.PartitionKey).ContinueWith(
                                 task =>
                                 {
-                                    switch (task.Status)
-                                    {
-                                        case TaskStatus.Faulted:
-                                            cts.Cancel();
-                                            console.WriteLine(task.Exception.InnerException.Message);
-                                            console.WriteLine($"failed to send files for {typeName}");
-                                            throw task.Exception;
-
-                                        case TaskStatus.RanToCompletion: break;
-                                    }
+                                    cts.Cancel();
+                                    console.WriteLine(task.Exception.InnerException.Message);
+                                    console.WriteLine($"failed to send files for {typeName}");
                                 }
+                                , TaskContinuationOptions.OnlyOnFaulted
                             );
                     }
                 },
@@ -168,18 +162,12 @@
              ).Unwrap().ContinueWith(
                                 task =>
                                 {
-                                    switch (task.Status)
-                                    {
-                                        case TaskStatus.Faulted:
-                                            cts.Cancel();
-                                            console.WriteLine($"failed to read files for {typeName}").ConfigureAwait(false);
-                                            console.WriteLine(task.Exception.InnerException.Message);
-                                            throw task.Exception;
-
-                                        case TaskStatus.RanToCompletion: break;
-                                    }
+                                    cts.Cancel();
+                                    console.WriteLine($"failed to read files for {typeName}").ConfigureAwait(false);
+                                    console.WriteLine(task.Exception.InnerException.Message);
                                 }
-                            ); ;
+                                , TaskContinuationOptions.OnlyOnFaulted
+                            );
 
 
             // await on consumer completion. Incase if sending is failed at any moment ,
@@ -214,7 +202,6 @@
             var numberOfMillisecondsToRun = (int.TryParse(Environment.GetEnvironmentVariable("SECONDS_TO_RUN"), out int outputSecondToRun) ? outputSecondToRun : 0) * 1000;
             var numberOfMillisecondsToLead = (int.TryParse(Environment.GetEnvironmentVariable("MINUTES_TO_LEAD"), out int outputMinutesToLead) ? outputMinutesToLead : 0) * 60000;
             var pushRideDataFirst = bool.TryParse(Environment.GetEnvironmentVariable("PUSH_RIDE_DATA_FIRST"), out Boolean outputPushRideDataFirst) ? outputPushRideDataFirst : false;
-
 
             if (string.IsNullOrWhiteSpace(rideConnectionString))
             {
