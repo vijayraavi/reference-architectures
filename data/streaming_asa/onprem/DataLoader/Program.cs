@@ -121,21 +121,19 @@
                                      {
                                          // proceed only if previous send operation is succesful.
                                          // cancelation is requested in case if send fails .
-                                         if (!cts.IsCancellationRequested)
-                                         {
-                                             await buffer.SendAsync(factory(line, header)).ConfigureAwait(false);
-                                             if (++messages % 10000 == 0)
-                                             {
-                                                 // random delay every 10000 messages are buffered ??
-                                                 await Task.Delay(random.Next(100, 1000))
-                                                      .ConfigureAwait(false);
-                                                 await console.WriteLine($"Created {messages} records for {typeName}").ConfigureAwait(false);
-                                             }
-                                         }
-                                         else
+                                         if (cts.IsCancellationRequested)
                                          {
                                              break;
                                          }
+                                         await buffer.SendAsync(factory(line, header)).ConfigureAwait(false);
+                                         if (++messages % 10000 == 0)
+                                         {
+                                             // random delay every 10000 messages are buffered ??
+                                             await Task.Delay(random.Next(100, 1000))
+                                                 .ConfigureAwait(false);
+                                             await console.WriteLine($"Created {messages} records for {typeName}").ConfigureAwait(false);
+                                         }
+
                                      }
                                  }
 
@@ -161,7 +159,7 @@
                                 {
                                     cts.Cancel();
                                     await console.WriteLine($"failed to read files for {typeName}").ConfigureAwait(false);
-                                    await console.WriteLine(task.Exception.InnerException.Message);
+                                    await console.WriteLine(task.Exception.InnerException.Message).ConfigureAwait(false);
                                 }
                                 , TaskContinuationOptions.OnlyOnFaulted
                             );
@@ -357,17 +355,11 @@
                 await Task.WhenAll(rideTask, fareTask, console.WriterTask);
                 Console.WriteLine("Data generation complete");
             }
-            catch (ArgumentException ae)
-            {
-                Console.WriteLine(ae.Message);
-                Console.WriteLine("Data generation failed");
-                return 1;
-            }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 Console.WriteLine("Data generation failed");
-                return 2;
+                return 1;
             }
 
             return 0;
