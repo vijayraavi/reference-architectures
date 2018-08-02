@@ -179,6 +179,7 @@
                 cts.Cancel();
                 await console.WriteLine(ex.Message).ConfigureAwait(false);
                 await console.WriteLine($"failed to send files for {typeName}").ConfigureAwait(false);
+                throw;
             }
 
         }
@@ -359,11 +360,13 @@
             catch (ArgumentException ae)
             {
                 Console.WriteLine(ae.Message);
+                Console.WriteLine("Data generation failed");
                 return 1;
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Console.WriteLine(ex.Message);
+                Console.WriteLine("Data generation failed");
                 return 2;
             }
 
