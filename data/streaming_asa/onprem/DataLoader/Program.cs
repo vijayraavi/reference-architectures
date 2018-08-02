@@ -67,11 +67,11 @@
                     {
                         return client.Value.SendAsync(new EventData(Encoding.UTF8.GetBytes(
                             t.GetData(dataFormat))), t.PartitionKey).ContinueWith(
-                                task =>
+                               async task =>
                                 {
                                     cts.Cancel();
-                                    console.WriteLine(task.Exception.InnerException.Message);
-                                    console.WriteLine($"failed to send files for {typeName}");
+                                    await console.WriteLine(task.Exception.InnerException.Message);
+                                    await console.WriteLine($"event hub client failed for {typeName}");
                                 }
                                 , TaskContinuationOptions.OnlyOnFaulted
                             );
@@ -98,8 +98,6 @@
             var readTask = Task.Factory.StartNew(
                  async () =>
                  {
-                     //  try
-                     //  {
                      // iterate through the path list and act on each file from here on
                      foreach (var path in pathList)
                      {
@@ -133,7 +131,6 @@
                                                       .ConfigureAwait(false);
                                                  await console.WriteLine($"Created {messages} records for {typeName}").ConfigureAwait(false);
                                              }
-
                                          }
                                          else
                                          {
@@ -160,11 +157,11 @@
                      }
                  }
              ).Unwrap().ContinueWith(
-                                task =>
+                               async task =>
                                 {
                                     cts.Cancel();
-                                    console.WriteLine($"failed to read files for {typeName}").ConfigureAwait(false);
-                                    console.WriteLine(task.Exception.InnerException.Message);
+                                    await console.WriteLine($"failed to read files for {typeName}").ConfigureAwait(false);
+                                    await console.WriteLine(task.Exception.InnerException.Message);
                                 }
                                 , TaskContinuationOptions.OnlyOnFaulted
                             );
