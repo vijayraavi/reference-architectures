@@ -4,7 +4,7 @@
 		module="azuredatabricksjob$sources"
 		revision="0.1"
 		status="integration"
-		publication="20180827082630"
+		publication="20180827103339"
 	/>
 	<configurations>
 		<conf name="compile" visibility="public" description=""/>

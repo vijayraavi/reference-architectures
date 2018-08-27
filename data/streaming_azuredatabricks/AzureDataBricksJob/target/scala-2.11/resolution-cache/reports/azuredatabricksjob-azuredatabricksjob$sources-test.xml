@@ -7,7 +7,7 @@
 		revision="0.1"
 		conf="test"
 		confs="compile, runtime, test, provided, optional, compile-internal, runtime-internal, test-internal, plugin, pom, scala-tool"
-		date="20180827082630"/>
+		date="20180827103339"/>
 	<dependencies>
 		<module organisation="org.scalatest" name="scalatest_2.11">
 			<revision name="3.0.5" status="release" pubdate="20180129005727" resolver="sbt-chain" artresolver="sbt-chain" homepage="http://www.scalatest.org" downloaded="false" searched="false" default="false" conf="default, compile, runtime, default(compile), master" position="174">
@@ -1754,7 +1754,7 @@
 		</module>
 		<module organisation="org.apache.curator" name="curator-recipes">
 			<revision name="2.6.0" status="release" pubdate="20140707200148" resolver="sbt-chain" artresolver="sbt-chain" homepage="" downloaded="false" searched="false" default="false" conf="compile, runtime(*), master(compile), runtime, compile(*), master" position="99">
-				<license name="The Apache Software License, Version 2.0" url="file:///Users/nithinmadhavanpillai/Documents/work/AzureDataBricksJob/LICENSE"/>
+				<license name="The Apache Software License, Version 2.0" url="file:///Users/nithinmadhavanpillai/Documents/work/reference-architectures/data/streaming_azuredatabricks/AzureDataBricksJob/LICENSE"/>
 				<metadata-artifact status="no" details="" size="13579" time="0" location="/Users/nithinmadhavanpillai/.ivy2/cache/org.apache.curator/curator-recipes/ivy-2.6.0.xml" searched="false" origin-is-local="false" origin-location="https://repo1.maven.org/maven2/org/apache/curator/curator-recipes/2.6.0/curator-recipes-2.6.0.pom"/>
 				<caller organisation="azuredatabricksjob" name="azuredatabricksjob$sources" conf="test, compile, runtime" rev="2.6.0" rev-constraint-default="2.6.0" rev-constraint-dynamic="2.6.0" callerrev="0.1"/>
 				<artifacts>
@@ -1778,7 +1778,7 @@
 		</module>
 		<module organisation="org.apache.curator" name="curator-framework">
 			<revision name="2.6.0" status="release" pubdate="20140707200112" resolver="sbt-chain" artresolver="sbt-chain" homepage="" downloaded="false" searched="false" default="false" conf="compile, runtime(*), master(compile), runtime, compile(*), master" position="29">
-				<license name="The Apache Software License, Version 2.0" url="file:///Users/nithinmadhavanpillai/Documents/work/AzureDataBricksJob/LICENSE"/>
+				<license name="The Apache Software License, Version 2.0" url="file:///Users/nithinmadhavanpillai/Documents/work/reference-architectures/data/streaming_azuredatabricks/AzureDataBricksJob/LICENSE"/>
 				<metadata-artifact status="no" details="" size="13427" time="0" location="/Users/nithinmadhavanpillai/.ivy2/cache/org.apache.curator/curator-framework/ivy-2.6.0.xml" searched="false" origin-is-local="false" origin-location="https://repo1.maven.org/maven2/org/apache/curator/curator-framework/2.6.0/curator-framework-2.6.0.pom"/>
 				<caller organisation="azuredatabricksjob" name="azuredatabricksjob$sources" conf="test, compile, runtime" rev="2.6.0" rev-constraint-default="2.6.0" rev-constraint-dynamic="2.6.0" callerrev="0.1"/>
 				<artifacts>
@@ -1790,7 +1790,7 @@
 		</module>
 		<module organisation="org.apache.curator" name="curator-client">
 			<revision name="2.6.0" status="release" pubdate="20140707200047" resolver="sbt-chain" artresolver="sbt-chain" homepage="" downloaded="false" searched="false" default="false" conf="compile, runtime(*), master(compile), runtime, compile(*), master" position="49">
-				<license name="The Apache Software License, Version 2.0" url="file:///Users/nithinmadhavanpillai/Documents/work/AzureDataBricksJob/LICENSE"/>
+				<license name="The Apache Software License, Version 2.0" url="file:///Users/nithinmadhavanpillai/Documents/work/reference-architectures/data/streaming_azuredatabricks/AzureDataBricksJob/LICENSE"/>
 				<metadata-artifact status="no" details="" size="13474" time="0" location="/Users/nithinmadhavanpillai/.ivy2/cache/org.apache.curator/curator-client/ivy-2.6.0.xml" searched="false" origin-is-local="false" origin-location="https://repo1.maven.org/maven2/org/apache/curator/curator-client/2.6.0/curator-client-2.6.0.pom"/>
 				<caller organisation="azuredatabricksjob" name="azuredatabricksjob$sources" conf="test, compile, runtime" rev="2.6.0" rev-constraint-default="2.6.0" rev-constraint-dynamic="2.6.0" callerrev="0.1"/>
 				<artifacts>
