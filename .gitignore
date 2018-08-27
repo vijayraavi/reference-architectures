@@ -213,3 +213,7 @@ ModelManifest.xml
 
 #Not to include .ds_store file
 .DS_Store
+
+#Not to include target files
+*/target/**
+.idea
