@@ -217,3 +217,4 @@ ModelManifest.xml
 #Not to include target files
 */target/**
 .idea
+project
