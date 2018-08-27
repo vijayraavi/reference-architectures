@@ -4,7 +4,7 @@
 		module="azuredatabricksjob-build"
 		revision="0.1.0-SNAPSHOT"
 		status="integration"
-		publication="20180827082006"
+		publication="20180827103331"
 		e:sbtVersion="1.0" e:scalaVersion="2.12"
 	>
 		<description>
