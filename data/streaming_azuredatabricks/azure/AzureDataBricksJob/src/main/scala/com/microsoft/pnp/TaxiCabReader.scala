@@ -1,19 +1,23 @@
 package com.microsoft.pnp
 
 
+import java.sql.Timestamp
+
 import org.apache.spark.eventhubs.{ConnectionStringBuilder, EventHubsConf, EventPosition}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions._
+import org.apache.spark.sql.streaming.{GroupState, GroupStateTimeout}
 
 object TaxiCabReader {
 
   val taxiRideEventHubName = "taxi-ride"
   val taxiFareEventHubName = "taxi-fare"
   val sparkReadStreamFormatForEventHub = "eventhubs"
+  val waterMarkTimeDuriation = "15 minutes"
+  val maxThresholdBetweenStreams = "10 seconds"
 
   def main(args: Array[String]) {
 
-    val spark = SparkSession.builder().config("spark.master", "local").getOrCreate()
+    val spark = SparkSession.builder().config("spark.master", "local[10]").getOrCreate()
     import spark.implicits._
 
     // Taxi ride infra setup -
@@ -50,17 +54,13 @@ object TaxiCabReader {
 
 
     val taxiRideStream = rides.map(eventHubRow => TaxiRideMapper.mapRowToEncrichedTaxiRideRecord(eventHubRow))
-      .withWatermark("rideEnqueueTime", "15 minutes")
-      .filter(rideRecord => rideRecord.isValidRideRecord)
-      .as[EnrichedTaxiRideRecord]
+      .withWatermark("enqueueTime", waterMarkTimeDuriation)
+      .as[EnrichedTaxiDataRecord]
 
-
-
-    //TODO - invalid rides should be sent to invalid ride monitoring sinks
 
     // Taxi fare read stream and extract fare object -
     val fareDataFrame = spark.readStream
-      .format("eventhubs")
+      .format(sparkReadStreamFormatForEventHub)
       .options(fareEventHubConf.toMap)
       .load
 
@@ -70,32 +70,133 @@ object TaxiCabReader {
 
 
     val taxiFareStream = fares.map(eventHubRow => TaxiFareMapper.mapRowToEncrichedTaxiFareRecord(eventHubRow))
-      .withWatermark("fareEnqueueTime", "15 minutes")
-      .filter(fareRecord => fareRecord.isValidFareRecord)
-      .as[EnrichedTaxiFareRecord]
+      .withWatermark("enqueueTime", waterMarkTimeDuriation)
+      .as[EnrichedTaxiDataRecord]
 
 
+    val mergedTaxiDataRecords = taxiFareStream.union(taxiRideStream)
 
-    // TODO - invalid fare should be sent to invalid fare monitoring sinks
+    val invalidTaxiDataRecords = mergedTaxiDataRecords.filter(record => !record.isValidRecord)
 
-    // merge two streams based on a key .
-    // assumption fare could reach later than ride in this case .
-    // max threshold would be 15 mins
-    val mergedStream = taxiFareStream.join(taxiRideStream, expr(
-      """
-      rideRecordKey = fareRecordKey AND
-      fareEnqueueTime >= rideEnqueueTime AND
-      fareEnqueueTime <= rideEnqueueTime + interval 15 minutes
-      """
-    ),
-      "leftOuter"
-    )
+    val validTaxiDataRecords = mergedTaxiDataRecords.filter(record => record.isValidRecord)
 
 
-    mergedStream.writeStream.outputMode("append").format("console").option("truncate", value = false).start().awaitTermination()
+    val groupedEnrichedTaxiDataRecords = validTaxiDataRecords.groupByKey(_.taxiDataRecordKey)
+      .mapGroupsWithState(GroupStateTimeout.ProcessingTimeTimeout())(updateAcrossTaxiDataPerKeyRecords)
+      .filter(groupedRecordWithState => groupedRecordWithState.expired)
+
+    groupedEnrichedTaxiDataRecords.writeStream.outputMode("update").format("console").start().awaitTermination()
+
+    spark.stop
+  }
 
 
-    spark.stop()
+  case class TaxiDataPerKeyState(
+                                  var taxiDataRecordKey: String,
+                                  var startTaxiDataRecordsEnqueueTime: Timestamp,
+                                  var endTaxiDataRecordsEnqueueTime: Timestamp,
+                                  var numOfTaxiDataRecords: Int,
+                                  var taxiRide: TaxiRide,
+                                  var taxiFare: TaxiFare,
+                                  var expired: Boolean)
+
+
+  def updateTaxiDataPerKeyStateWithTaxiDataPerKeyRecord(state: TaxiDataPerKeyState, input: EnrichedTaxiDataRecord): TaxiDataPerKeyState = {
+
+    var isDuplicateRecord = false
+    if (state.taxiDataRecordKey == input.taxiDataRecordKey) {
+
+      input.recordType match {
+        case "taxiRide" =>
+          if (state.taxiRide != null) {
+            isDuplicateRecord = true
+          } else {
+            state.taxiRide = input.taxiRide
+          }
+
+        case "taxiFare" =>
+          if (state.taxiFare != null) {
+            isDuplicateRecord = true
+          }
+          else {
+            state.taxiFare = input.taxiFare
+          }
+      }
+
+      if (!isDuplicateRecord) {
+        if (input.enqueueTime.after(state.endTaxiDataRecordsEnqueueTime)) {
+          state.endTaxiDataRecordsEnqueueTime = input.enqueueTime
+        }
+
+        if (input.enqueueTime.before(state.startTaxiDataRecordsEnqueueTime)) {
+          state.startTaxiDataRecordsEnqueueTime = input.enqueueTime
+        }
+
+        state.numOfTaxiDataRecords += 1
+        state.expired = false
+      }
+    }
+    else {
+
+      if (input.enqueueTime.after(state.endTaxiDataRecordsEnqueueTime)) {
+        state.startTaxiDataRecordsEnqueueTime = input.enqueueTime
+        state.endTaxiDataRecordsEnqueueTime = input.enqueueTime
+        state.taxiDataRecordKey = input.taxiDataRecordKey
+        input.recordType match {
+          case "taxiRide" => state.taxiRide = input.taxiRide
+          case "taxiFare" => state.taxiFare = input.taxiFare
+        }
+        state.numOfTaxiDataRecords = 1
+        state.expired = false
+      }
+    }
+
+    state
+
+  }
+
+
+  def updateAcrossTaxiDataPerKeyRecords(taxiDataRecordKey: String, inputs: Iterator[EnrichedTaxiDataRecord],
+                                        oldState: GroupState[TaxiDataPerKeyState]): TaxiDataPerKeyState = {
+
+
+    if (oldState.hasTimedOut) {
+
+      val currentState = oldState.get
+      val newState = TaxiDataPerKeyState(
+        currentState.taxiDataRecordKey,
+        currentState.startTaxiDataRecordsEnqueueTime,
+        currentState.endTaxiDataRecordsEnqueueTime,
+        currentState.numOfTaxiDataRecords,
+        currentState.taxiRide,
+        currentState.taxiFare,
+        !currentState.expired
+      )
+      oldState.remove()
+      newState
+    }
+    else {
+
+      var state: TaxiDataPerKeyState = if (oldState.exists) oldState.get
+      else TaxiDataPerKeyState(
+        "",
+        new java.sql.Timestamp(6284160000000L),
+        new java.sql.Timestamp(6284160L),
+        0,
+        null,
+        null,
+        false
+      )
+
+      for (input <- inputs) {
+
+        state = updateTaxiDataPerKeyStateWithTaxiDataPerKeyRecord(state, input)
+        oldState.update(state)
+      }
+
+      oldState.setTimeoutDuration(maxThresholdBetweenStreams)
+      state
+    }
   }
 
 
