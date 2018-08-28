@@ -9,33 +9,39 @@ object TaxiFareMapper {
 
   val invalidTaxiFareCsv = "invalid taxi fare csv"
 
-  def mapRowToEncrichedTaxiFareRecord(eventHubRow: Row): EnrichedTaxiFareRecord = {
+  def mapRowToEncrichedTaxiFareRecord(eventHubRow: Row): EnrichedTaxiDataRecord = {
 
     validateHeaderEmbededCsvString(eventHubRow(0).toString) match {
       case Success(csvContent) => Try(mapCsvToTaxiFare(csvContent)) match {
 
-        case Success(taxiFare) => EnrichedTaxiFareRecord(
-          isValidFareRecord = true,
+        case Success(taxiFare) => EnrichedTaxiDataRecord(
+          true,
           taxiFare,
+          null,
           "",
           eventHubRow(0).toString,
           taxiFare.key,
-          Utils.eventHubEnqueueTimeStringToTimeStamp(eventHubRow(1).toString).get)
-        case Failure(exception) => EnrichedTaxiFareRecord(
-          isValidFareRecord = false,
+          Utils.eventHubEnqueueTimeStringToTimeStamp(eventHubRow(1).toString).get,
+          "taxiFare")
+        case Failure(exception) => EnrichedTaxiDataRecord(
+          false,
+          null,
           null,
           exception.getMessage,
           eventHubRow(0).toString,
           "",
-          Utils.eventHubEnqueueTimeStringToTimeStamp(eventHubRow(1).toString).get)
+          Utils.eventHubEnqueueTimeStringToTimeStamp(eventHubRow(1).toString).get,
+          "taxiFare")
       }
-      case Failure(exception) => EnrichedTaxiFareRecord(
-        isValidFareRecord = false,
+      case Failure(exception) => EnrichedTaxiDataRecord(
+        false,
+        null,
         null,
         exception.getMessage,
         eventHubRow(0).toString,
         "",
-        Utils.eventHubEnqueueTimeStringToTimeStamp(eventHubRow(1).toString).get)
+        Utils.eventHubEnqueueTimeStringToTimeStamp(eventHubRow(1).toString).get,
+        "taxiFare")
     }
   }
 

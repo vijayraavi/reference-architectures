@@ -110,7 +110,7 @@ class TaxiRideMapperTester extends SparkSuiteBase with Matchers with BeforeAndAf
     )
 
     val enrichedTaxiRideRecords = rideDataFrame.map(row => TaxiRideMapper.mapRowToEncrichedTaxiRideRecord(row))
-      .filter(x => x.isValidRideRecord).as[EnrichedTaxiRideRecord]
+      .filter(x => x.isValidRecord).as[EnrichedTaxiDataRecord]
 
     val expectedCount = 1
     val actualCount = enrichedTaxiRideRecords.count()
@@ -142,7 +142,7 @@ class TaxiRideMapperTester extends SparkSuiteBase with Matchers with BeforeAndAf
     )
 
     val enrichedTaxiRideRecords = rideDataFrame.map(row => TaxiRideMapper.mapRowToEncrichedTaxiRideRecord(row))
-      .filter(x => x.isValidRideRecord).as[EnrichedTaxiRideRecord]
+      .filter(x => x.isValidRecord).as[EnrichedTaxiDataRecord]
 
     val expectedCount = 0
     val actualCount = enrichedTaxiRideRecords.count()
@@ -172,7 +172,7 @@ class TaxiRideMapperTester extends SparkSuiteBase with Matchers with BeforeAndAf
     )
 
     val enrichedTaxiRideRecords = rideDataFrame.map(row => TaxiRideMapper.mapRowToEncrichedTaxiRideRecord(row))
-      .filter(x => x.isValidRideRecord).as[EnrichedTaxiRideRecord]
+      .filter(x => x.isValidRecord).as[EnrichedTaxiDataRecord]
 
     val expectedCount = 0
     val actualCount = enrichedTaxiRideRecords.count()

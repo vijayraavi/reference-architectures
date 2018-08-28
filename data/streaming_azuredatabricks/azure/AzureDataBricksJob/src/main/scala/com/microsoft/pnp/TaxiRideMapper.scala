@@ -13,46 +13,54 @@ object TaxiRideMapper {
   val invalidTaxiRideObjectMessage = "invalid taxiride record, key for this record contains null, failed at mapJsonToTaxiRide method"
   val jsonToTaxiRideConvertionFailedMessage = "failed at mapJsonToTaxiRide method "
 
-  def mapRowToEncrichedTaxiRideRecord(eventHubRow: Row): EnrichedTaxiRideRecord = {
+  def mapRowToEncrichedTaxiRideRecord(eventHubRow: Row): EnrichedTaxiDataRecord = {
 
     validateJsonString(eventHubRow(0).toString) match {
 
       case Success(_) => mapJsonToTaxiRide(eventHubRow(0).toString) match {
 
         case Success(taxiRide) => if (!taxiRide.key.contains("null")) {
-          EnrichedTaxiRideRecord(
-            isValidRideRecord = true,
+          EnrichedTaxiDataRecord(
+            isValidRecord = true,
+            null,
             taxiRide,
             "",
             eventHubRow(0).toString,
             taxiRide.key,
-            Utils.eventHubEnqueueTimeStringToTimeStamp(eventHubRow(1).toString).get)
+            Utils.eventHubEnqueueTimeStringToTimeStamp(eventHubRow(1).toString).get,
+            "taxiRide")
         }
         else {
-          EnrichedTaxiRideRecord(
-            isValidRideRecord = false,
+          EnrichedTaxiDataRecord(
+            isValidRecord = false,
+            null,
             taxiRide,
             invalidTaxiRideObjectMessage,
             eventHubRow(0).toString,
             taxiRide.key,
-            Utils.eventHubEnqueueTimeStringToTimeStamp(eventHubRow(1).toString).get)
+            Utils.eventHubEnqueueTimeStringToTimeStamp(eventHubRow(1).toString).get,
+            "taxiRide")
         }
 
-        case Failure(_) => EnrichedTaxiRideRecord(
-          isValidRideRecord = false,
+        case Failure(_) => EnrichedTaxiDataRecord(
+          isValidRecord = false,
+          null,
           null,
           jsonToTaxiRideConvertionFailedMessage,
           eventHubRow(0).toString,
           "",
-          Utils.eventHubEnqueueTimeStringToTimeStamp(eventHubRow(1).toString).get)
+          Utils.eventHubEnqueueTimeStringToTimeStamp(eventHubRow(1).toString).get,
+          "taxiRide")
       }
-      case Failure(_) => EnrichedTaxiRideRecord(
-        isValidRideRecord = false,
+      case Failure(_) => EnrichedTaxiDataRecord(
+        isValidRecord = false,
+        null,
         null,
         invalidJsonStringMessage,
         eventHubRow(0).toString,
         "",
-        Utils.eventHubEnqueueTimeStringToTimeStamp(eventHubRow(1).toString).get)
+        Utils.eventHubEnqueueTimeStringToTimeStamp(eventHubRow(1).toString).get,
+        "taxiRide")
     }
   }
 

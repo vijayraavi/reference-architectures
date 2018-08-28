@@ -15,3 +15,4 @@ abstract class TaxiData {
     "%s_%s_%s_%s".format(medallion, hackLicense, vendorId, pickupTime)
   }
 }
+
