@@ -1,60 +1,30 @@
-package Monitoring.Metrics
+package monitoring.com.microsoft.pnp
 
-import org.apache.log4j._
-import org.apache.spark.sql.streaming.StreamingQueryListener
-import org.apache.spark.sql.streaming.StreamingQueryListener._
-import org.json4s._
-import org.json4s.native._
-import org.json4s.native.JsonMethods._
-import com.google.gson.Gson
-import com.github.ptvlogistics.log4jala._
+import java.time.{ZoneId, ZonedDateTime}
 import java.util.HashMap
-import java.time.ZoneId
-import java.time.ZonedDateTime
+
+import org.apache.spark.sql.streaming.StreamingQueryListener.QueryProgressEvent
+import org.json4s.{DefaultFormats, JObject}
+import org.json4s.native.JsonMethods.parse
+
+import org.apache.spark._
+
+import org.apache.spark.streaming._
+
+import org.apache.spark.sql._
+import org.apache.spark.sql.functions.get_json_object
+
+import org.apache.spark.sql.types._
+import org.apache.spark.sql.streaming._
+import com.google.gson.Gson;
+import org.apache.spark.sql._
+import com.github.ptvlogistics.log4jala._
+import org.apache.log4j._
 
 
-class StreamingMetricsListener() extends StreamingQueryListener {
-
+object Utils {
 
   implicit val formats = DefaultFormats
-  var logger:Logger = Logger.getLogger("Log4jALALogger")
-
-  override def onQueryStarted(event: QueryStartedEvent): Unit = {
-  }
-
-  override def onQueryProgress(event: QueryProgressEvent): Unit = {
-
-    try {
-      logger = Logger.getLogger("Log4jALALogger")
-      //parsing the telemetry Payload and logging to ala
-      logger.info(parsePayload(event))
-    }
-
-    catch {
-      case e: Exception => {
-        //parsing the error payload and logging to ala
-        logger = Logger.getLogger("Log4jALAError")
-        logger.error(parseError(e))
-      }
-    }
-
-  }
-
-  override def onQueryTerminated(event: QueryTerminatedEvent): Unit = {
-
-  }
-
-  def parseError(e:Exception) : HashMap[String,AnyRef] ={
-    val date = java.time.format
-      .DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneId.of("GMT")))
-    val error = new HashMap[String, AnyRef]()
-    error.put("message",e.getLocalizedMessage)
-    error.put("stack",  e.getStackTrace)
-    error.put("DateValue",date.toString())
-
-    error
-
-  }
 
   def parsePayload(event: QueryProgressEvent): HashMap[String, AnyRef]={
     val date = java.time.format
@@ -96,7 +66,36 @@ class StreamingMetricsListener() extends StreamingQueryListener {
 
     metrics
 
+  }
 
+  def parseError(e:Exception) : HashMap[String,AnyRef] ={
+    val date = java.time.format
+      .DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneId.of("GMT")))
+    val error = new HashMap[String, AnyRef]()
+    error.put("message",e.getLocalizedMessage)
+    error.put("stack",  e.getStackTrace)
+    error.put("DateValue",date.toString())
+
+    error
+
+  }
+
+  def parseRow(row: Row) : HashMap[String,AnyRef] ={
+    val date = java.time.format
+      .DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneId.of("GMT")))
+
+    val bizmetrics = new HashMap[String, AnyRef]()
+
+
+
+    for (i <- 0 until row.length-1) {
+      bizmetrics.put(row.schema.fields(i).name,row(i).asInstanceOf[AnyRef])
+    }
+
+    bizmetrics.put("DateValue",date.toString())
+
+
+    bizmetrics
 
   }
 
