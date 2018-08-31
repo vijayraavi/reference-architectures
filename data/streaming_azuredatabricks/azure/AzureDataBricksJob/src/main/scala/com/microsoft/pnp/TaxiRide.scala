@@ -1,5 +1,6 @@
 package com.microsoft.pnp
 
+
 case class TaxiRide(rateCode: Int,
                     storeAndForwardFlag: String,
                     dropoffTime: String,
@@ -13,7 +14,8 @@ case class TaxiRide(rateCode: Int,
                     medallion: Long,
                     hackLicense: Long,
                     vendorId: String,
-                    pickupTime: String)
+                    pickupTime: String,
+                    var neigbhourHood: String = "defaultNeighbourhood")
   extends TaxiData
     with Serializable
 

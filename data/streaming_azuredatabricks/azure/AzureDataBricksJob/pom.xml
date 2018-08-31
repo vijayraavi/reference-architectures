@@ -41,13 +41,24 @@
         <dependency>
             <groupId>com.microsoft.azure</groupId>
             <artifactId>azure-eventhubs-spark_2.11</artifactId>
-            <version>2.3.1</version>
+            <version>2.3.4</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-shapefile</artifactId>
             <version>19.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ptv-logistics</groupId>
+            <artifactId>log4jala</artifactId>
+            <version>1.0.4</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.json4s/json4s-native -->
+        <dependency>
+            <groupId>org.json4s</groupId>
+            <artifactId>json4s-native_2.11</artifactId>
+            <version>3.6.0</version>
         </dependency>
         <!-- Test -->
         <dependency>
@@ -80,6 +91,13 @@
             <version>2.1.1</version>
             <scope>compile</scope>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.scala-lang.modules/scala-xml -->
+        <dependency>
+            <groupId>org.scala-lang.modules</groupId>
+            <artifactId>scala-xml_2.11</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+
     </dependencies>
     <repositories>
         <repository>
@@ -90,8 +108,17 @@
     </repositories>
 
     <build>
-        <!--<sourceDirectory>src/main/scala</sourceDirectory>-->
-        <!--<testSourceDirectory>src/test/scala</testSourceDirectory>-->
+
+        <!--<resources>-->
+            <!--<resource>-->
+                <!--<directory>src/main/resources</directory>-->
+                <!--<includes>-->
+                    <!--<include>**/*.zip</include>-->
+                <!--</includes>-->
+            <!--</resource>-->
+        <!--</resources>-->
+        <!--&lt;!&ndash;<sourceDirectory>src/main/scala</sourceDirectory>&ndash;&gt;-->
+        <!--&lt;!&ndash;<testSourceDirectory>src/test/scala</testSourceDirectory>&ndash;&gt;-->
         <plugins>
             <plugin>
                 <!-- see http://davidb.github.com/scala-maven-plugin -->

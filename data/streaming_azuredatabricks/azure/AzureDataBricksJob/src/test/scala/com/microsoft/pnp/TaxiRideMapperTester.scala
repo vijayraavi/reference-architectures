@@ -5,11 +5,14 @@ import java.sql.Timestamp
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.{StringType, StructType, TimestampType}
 import org.scalatest.{BeforeAndAfterEach, Matchers}
+import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success}
 
 class TaxiRideMapperTester extends SparkSuiteBase with Matchers with BeforeAndAfterEach {
 
+
+  val logger = LoggerFactory.getLogger("TaxiRideMapperTester")
 
   override def beforeEach(): Unit = {
 
@@ -24,6 +27,8 @@ class TaxiRideMapperTester extends SparkSuiteBase with Matchers with BeforeAndAf
 
   test("it should parse valid json and match mapJsonToTaxiRide success case") {
 
+
+    logger.info("it should parse valid json and match mapJsonToTaxiRide success case")
     val taxiRideJsonString = "{\"rateCode\":1,\"storeAndForwardFlag\":\"N\",\"dropoffTime\":\"2013-01-01T00:11:20+00:00\",\"passengerCount\":1,\"tripTimeInSeconds\":413.0,\"tripDistanceInMiles\":2.3,\"pickupLon\":-73.97912,\"pickupLat\":40.7623177,\"dropoffLon\":-73.95027,\"dropoffLat\":40.77126,\"medallion\":2013000717,\"hackLicense\":2013000714,\"vendorId\":\"CMT\",\"pickupTime\":\"2013-01-01T00:04:27+00:00\"}"
 
     var shouldMapToTaxiRide = false
