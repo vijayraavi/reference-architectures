@@ -1,0 +1,168 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "eventHubNamespace": {
+      "type": "string"
+    },
+    "dataBricksNamespace" :{
+      "type":"string"
+    }
+  },
+  "variables": {
+    "taxiRideEventHub": "taxi-ride",
+    "taxiRideConsumerGroup": "[concat(variables('taxiRideEventHub'), '-databricks-consumer-group')]",
+    "taxiRideConsumerGroupResourceId": "[concat(resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('eventHubNamespace'), variables('taxiRideEventHub')), '/consumergroups/', variables('taxiRideConsumerGroup'))]",
+    "taxiRideSharedAccessPolicy": "[concat(variables('taxiRideEventHub'), '-databricks-access-policy')]",
+    "taxiRideSharedAccessPolicyResourceId": "[concat(resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('eventHubNamespace'), variables('taxiRideEventHub')), '/authorizationRules/', variables('taxiRideSharedAccessPolicy'))]",
+    "taxiFareEventHub": "taxi-fare",
+    "taxiFareConsumerGroup": "[concat(variables('taxiFareEventHub'), '-databricks-consumer-group')]",
+    "taxiFareConsumerGroupResourceId": "[concat(resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('eventHubNamespace'), variables('taxiFareEventHub')), '/consumergroups/', variables('taxiFareConsumerGroup'))]",
+    "taxiFareSharedAccessPolicy": "[concat(variables('taxiFareEventHub'), '-databricks-access-policy')]",
+    "taxiFareSharedAccessPolicyResourceId": "[concat(resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('eventHubNamespace'), variables('taxiFareEventHub')), '/authorizationRules/', variables('taxiFareSharedAccessPolicy'))]",
+    "invalidTaxiRecordsEventHub": "invalidtaxi-records",
+    "invalidTaxiRecordsConsumerGroup": "[concat(variables('invalidTaxiRecordsEventHub'), '-databricks-consumer-group')]",
+    "invalidTaxiRecordsConsumerGroupResourceId": "[concat(resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('eventHubNamespace'), variables('invalidTaxiRecordsEventHub')), '/consumergroups/', variables('invalidTaxiRecordsConsumerGroup'))]",
+    "invalidTaxiRecordsSharedAccessPolicy": "[concat(variables('invalidTaxiRecordsEventHub'), '-databricks-access-policy')]",
+    "invalidTaxiRecordsSharedAccessPolicyResourceId": "[concat(resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('eventHubNamespace'), variables('invalidTaxiRecordsEventHub')), '/authorizationRules/', variables('invalidTaxiRecordsSharedAccessPolicy'))]",
+    "taxiDataBricksGroup": "[concat(parameters('dataBricksNamespace'), '-databricks-consumer-group')]",
+    "taxiDataBricksGroupResourceId":"[concat(subscription().id, '/resourceGroups/', variables('taxiDataBricksGroup'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.EventHub/namespaces",
+      "name": "[parameters('eventHubNamespace')]",
+      "apiVersion": "2017-04-01",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard",
+        "tier": "Standard"
+      },
+      "resources": [
+        {
+          "type": "eventhubs",
+          "name": "[variables('taxiRideEventHub')]",
+          "apiVersion": "2017-04-01",
+          "properties": {
+            "messageRetentionInDays": 3,
+            "partitionCount": 8
+          },
+          "resources": [
+            {
+              "type": "consumergroups",
+              "name": "[variables('taxiRideConsumerGroup')]",
+              "apiVersion": "2017-04-01",
+              "properties": {},
+              "dependsOn": [
+                "[variables('taxiRideEventHub')]"
+              ]
+            },
+            {
+              "type": "authorizationRules",
+              "name": "[variables('taxiRideSharedAccessPolicy')]",
+              "apiVersion": "2017-04-01",
+              "properties": {
+                "rights": [
+                  "Listen",
+                  "Send"
+                ]
+              },
+              "dependsOn": [
+                "[variables('taxiRideEventHub')]"
+              ]
+            }
+          ],
+          "dependsOn": [
+            "[parameters('eventHubNamespace')]"
+          ]
+        },
+        {
+          "type": "eventhubs",
+          "name": "[variables('taxiFareEventHub')]",
+          "apiVersion": "2017-04-01",
+          "properties": {
+            "messageRetentionInDays": 3,
+            "partitionCount": 8
+          },
+          "resources": [
+            {
+              "type": "consumergroups",
+              "name": "[variables('taxiFareConsumerGroup')]",
+              "apiVersion": "2017-04-01",
+              "properties": {},
+              "dependsOn": [
+                "[variables('taxiFareEventHub')]"
+              ]
+            },
+            {
+              "type": "authorizationRules",
+              "name": "[variables('taxiFareSharedAccessPolicy')]",
+              "apiVersion": "2017-04-01",
+              "properties": {
+                "rights": [
+                  "Listen",
+                  "Send"
+                ]
+              },
+              "dependsOn": [
+                "[variables('taxiFareEventHub')]"
+              ]
+            }
+          ],
+          "dependsOn": [
+            "[parameters('eventHubNamespace')]"
+          ]
+        },
+        {
+          "type": "eventhubs",
+          "name": "[variables('invalidTaxiRecordsEventHub')]",
+          "apiVersion": "2017-04-01",
+          "properties": {
+            "messageRetentionInDays": 3,
+            "partitionCount": 8
+          },
+          "resources": [
+            {
+              "type": "consumergroups",
+              "name": "[variables('invalidTaxiRecordsConsumerGroup')]",
+              "apiVersion": "2017-04-01",
+              "properties": {},
+              "dependsOn": [
+                "[variables('invalidTaxiRecordsEventHub')]"
+              ]
+            },
+            {
+              "type": "authorizationRules",
+              "name": "[variables('invalidTaxiRecordsSharedAccessPolicy')]",
+              "apiVersion": "2017-04-01",
+              "properties": {
+                "rights": [
+                  "Listen",
+                  "Send"
+                ]
+              },
+              "dependsOn": [
+                "[variables('invalidTaxiRecordsEventHub')]"
+              ]
+            }
+          ],
+          "dependsOn": [
+            "[parameters('eventHubNamespace')]"
+          ]
+        } 
+      ]
+    },
+    {
+      "type": "Microsoft.Databricks/workspaces",
+      "name": "[parameters('dataBricksNamespace')]",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2018-04-01",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "ManagedResourceGroupId": "[variables('taxiDataBricksGroupResourceId')]"
+      }
+    }
+  ]
+}

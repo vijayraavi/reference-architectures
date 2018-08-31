@@ -15,7 +15,7 @@ object TaxiCabReader {
   val taxiFareEventHubName = "taxi-fare"
   val sparkStreamFormatForEventHub = "eventhubs"
   val waterMarkTimeDuriation = "15 minutes"
-  val maxThresholdBetweenStreams = "10 seconds"
+  val maxThresholdBetweenStreams = "50 seconds"
   val errorRecordsEventHubName = "taxi-ride" //TODO get one defined. time sbeing using an existing one
 
   def main(args: Array[String]) {
@@ -27,6 +27,8 @@ object TaxiCabReader {
         val spark = SparkSession.builder().config("spark.master", "local[10]").getOrCreate()
         import spark.implicits._
 
+
+        spark.streams.addListener(new StreamingMetricsListener())
         // Taxi ride infra setup -
 
         val rideConnectionString = ConnectionStringBuilder(arguments.rideEventHubConnectionString)
@@ -109,6 +111,10 @@ object TaxiCabReader {
           .trigger(Trigger.ProcessingTime("25 seconds"))
           .option("checkpointLocation", "./checkpoint/") // TODO paramterize checkpoint location and make it point to azure blob
           .start()
+
+
+//        val neibhourhoods = groupedEnrichedTaxiDataRecords.filter(x => x.taxiRide != null).map(x => x.taxiRide.neigbhourHood)
+
 
         groupedEnrichedTaxiDataRecords
           .writeStream
