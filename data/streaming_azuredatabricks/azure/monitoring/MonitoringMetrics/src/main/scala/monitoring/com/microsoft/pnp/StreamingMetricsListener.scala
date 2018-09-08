@@ -13,11 +13,14 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 
 
+
+
 class StreamingMetricsListener() extends StreamingQueryListener {
 
 
   implicit val formats = DefaultFormats
   lazy val logger:Logger = Logger.getLogger("Log4jALALogger")
+
 
   override def onQueryStarted(event: QueryStartedEvent): Unit = {
 

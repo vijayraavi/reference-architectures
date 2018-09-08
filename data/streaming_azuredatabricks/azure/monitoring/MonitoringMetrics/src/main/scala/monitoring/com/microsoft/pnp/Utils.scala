@@ -4,20 +4,17 @@ import java.time.{ZoneId, ZonedDateTime}
 import java.util.HashMap
 
 import org.apache.spark.sql.streaming.StreamingQueryListener.QueryProgressEvent
-
 import org.apache.spark._
-
 import org.apache.spark.streaming._
-
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions.get_json_object
-
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.streaming._
-import com.google.gson.Gson;
+import com.google.gson.Gson
 import org.apache.spark.sql._
 import com.github.ptvlogistics.log4jala._
 import org.apache.log4j._
+import org.apache.spark.util.LongAccumulator
 
 
 object Utils {
@@ -55,6 +52,9 @@ object Utils {
 
   }
 
+
+
+
   def parseRow(row: Row) : HashMap[String,AnyRef] ={
     val date = java.time.format
       .DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneId.of("GMT")))
@@ -62,10 +62,11 @@ object Utils {
     val bizmetrics = new HashMap[String, AnyRef]()
 
 
-
-    for (i <- 0 until row.length-1) {
+    for (i <- 0 until row.length) {
       bizmetrics.put(row.schema.fields(i).name,row(i).asInstanceOf[AnyRef])
     }
+
+
 
     bizmetrics.put("DateValue",date.toString())
 
