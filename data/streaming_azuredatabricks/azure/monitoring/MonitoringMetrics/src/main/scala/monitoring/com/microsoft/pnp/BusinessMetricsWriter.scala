@@ -15,7 +15,7 @@ import com.github.ptvlogistics.log4jala._
 import org.apache.log4j._
 
 class BusinessMetricsWriter extends ForeachWriter[Row] {
-  @transient lazy val logger = Logger.getLogger("Log4jALABizLogger")
+  @transient lazy val logger = Logger.getLogger("Log4jALALogger")
 
   def open(partitionId: Long,version: Long): Boolean = {
 
