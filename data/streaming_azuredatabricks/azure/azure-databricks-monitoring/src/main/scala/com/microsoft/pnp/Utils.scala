@@ -6,20 +6,7 @@ import java.util.HashMap
 import org.apache.spark.sql.streaming.StreamingQueryListener.QueryProgressEvent
 import org.json4s.{DefaultFormats, JObject}
 import org.json4s.native.JsonMethods.parse
-
-import org.apache.spark._
-
-import org.apache.spark.streaming._
-
-import org.apache.spark.sql._
-import org.apache.spark.sql.functions.get_json_object
-
-import org.apache.spark.sql.types._
-import org.apache.spark.sql.streaming._
-import com.google.gson.Gson;
-import org.apache.spark.sql._
-import com.github.ptvlogistics.log4jala._
-import org.apache.log4j._
+import org.apache.spark.sql.Row
 
 
 object Utils {
@@ -65,7 +52,6 @@ object Utils {
     metrics.put("DateValue",date.toString())
 
     metrics
-
   }
 
   def parseError(e:Exception) : HashMap[String,AnyRef] ={
@@ -75,9 +61,7 @@ object Utils {
     error.put("message",e.getLocalizedMessage)
     error.put("stack",  e.getStackTrace)
     error.put("DateValue",date.toString())
-
     error
-
   }
 
   def parseRow(row: Row) : HashMap[String,AnyRef] ={
@@ -86,17 +70,13 @@ object Utils {
 
     val bizmetrics = new HashMap[String, AnyRef]()
 
-
-
-    for (i <- 0 until row.length-1) {
+    for (i <- 0 until row.length - 1) {
       bizmetrics.put(row.schema.fields(i).name,row(i).asInstanceOf[AnyRef])
     }
 
     bizmetrics.put("DateValue",date.toString())
 
-
     bizmetrics
-
   }
 
 }
