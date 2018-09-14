@@ -13,14 +13,16 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 
 
+
+
 class StreamingMetricsListener() extends StreamingQueryListener {
 
 
   implicit val formats = DefaultFormats
-  var logger:Logger = Logger.getLogger("Log4jALALogger")
+  lazy val logger:Logger = Logger.getLogger("Log4jALALogger")
+
 
   override def onQueryStarted(event: QueryStartedEvent): Unit = {
-
 
   }
 
@@ -28,7 +30,6 @@ class StreamingMetricsListener() extends StreamingQueryListener {
 
 
     try {
-      logger = Logger.getLogger("Log4jALALogger")
       //parsing the telemetry Payload and logging to ala
       logger.info(Utils.parsePayload(event))
     }
@@ -36,7 +37,6 @@ class StreamingMetricsListener() extends StreamingQueryListener {
     catch {
       case e: Exception => {
         //parsing the error payload and logging to ala
-        logger = Logger.getLogger("Log4jALAError")
         logger.error(Utils.parseError(e))
       }
     }
@@ -44,6 +44,11 @@ class StreamingMetricsListener() extends StreamingQueryListener {
   }
 
   override def onQueryTerminated(event: QueryTerminatedEvent): Unit = {
+
+    if(event.exception.nonEmpty){
+      logger.error(event.exception)
+    }
+
 
 
   }
