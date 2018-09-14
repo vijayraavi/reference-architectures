@@ -36,7 +36,7 @@ object TaxiCabReader {
 
         @transient val appMetrics = new AppMetrics(spark.sparkContext)
 
-        appMetrics.registerGauge("metricsregistrytest.processed",
+        appMetrics.registerGauge("invalidDataRecords",
           AppAccumulators.getProcessedInputCountInstance(spark.sparkContext))
 
         SparkEnv.get.metricsSystem.registerSource(appMetrics)
