@@ -6,6 +6,11 @@ import com.vividsolutions.jts.geom.Point;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFinder;
 import org.geotools.data.FeatureSource;
+import org.geotools.data.collection.SpatialIndexFeatureCollection;
+import org.geotools.data.collection.SpatialIndexFeatureSource;
+import org.geotools.data.shapefile.ShapefileDataStore;
+import org.geotools.data.shapefile.ShapefileDataStoreFactory;
+import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
@@ -69,14 +74,15 @@ public class GeoFinder implements Serializable {
             logger.info(String.format("Using shapefile: %s", shapeFileUrl));
             Map<String, String> connect = new HashMap<>();
             connect.put("url", shapeFileUrl.toString());
-
-            DataStore dataStore = DataStoreFinder.getDataStore(connect);
+            //DataStore dataStore = DataStoreFinder.getDataStore(connect);
+            ShapefileDataStore dataStore = new ShapefileDataStore(shapeFileUrl);
             String[] typeNames = dataStore.getTypeNames();
             String typeName = typeNames[0];
 
             logger.info(String.format("Reading content %s", typeName));
+            FeatureSource featureSource = new SpatialIndexFeatureSource(
+                    new SpatialIndexFeatureCollection(dataStore.getFeatureSource(typeName).getFeatures()));
 
-            FeatureSource featureSource = dataStore.getFeatureSource(typeName);
             FilterFactory2 filterFactory = CommonFactoryFinder.getFilterFactory2();
             PropertyName propertyName = filterFactory.property(dataStore
                     .getSchema(typeName)

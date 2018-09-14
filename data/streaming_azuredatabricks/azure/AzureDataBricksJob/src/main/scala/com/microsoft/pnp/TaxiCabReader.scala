@@ -3,10 +3,13 @@ package com.microsoft.pnp
 
 import java.sql.Timestamp
 
+import org.apache.spark.SparkEnv
 import org.apache.spark.eventhubs.{ConnectionStringBuilder, EventHubsConf, EventPosition}
+import org.apache.spark.metrics.source.{AppAccumulators, AppMetrics}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.streaming.{GroupState, GroupStateTimeout, Trigger}
-
+import org.apache.spark.sql.functions.count
+import org.apache.spark.sql.functions.lit
 import scala.util.{Failure, Success, Try}
 
 object TaxiCabReader {
@@ -25,6 +28,12 @@ object TaxiCabReader {
       case Success(arguments) => {
 
         val spark = SparkSession.builder().config("spark.master", "local[10]").getOrCreate()
+
+        @transient val appMetrics = new AppMetrics(spark.sparkContext)
+        appMetrics.registerGauge("metricsregistrytest.processed",
+          AppAccumulators.getProcessedInputCountInstance(spark.sparkContext))
+        SparkEnv.get.metricsSystem.registerSource(appMetrics)
+
         import spark.implicits._
 
 
@@ -94,6 +103,28 @@ object TaxiCabReader {
 
         val invalidTaxiDataRecords = mergedTaxiDataRecords.filter(record => !record.isValidRecord)
 
+
+        // option 1
+        // we push the # of invalid taxi records to ALA
+        // as a business metrics
+        // using a business metris writer for high scala and performance
+        val businessMetricsWriter = new BusinessMetricsWriter()
+        invalidTaxiDataRecords.toDF()
+          .groupBy("isValidRecord")
+          .agg(
+            count(lit(1)).alias("CountInvalidRecords")
+          )
+          .writeStream
+          .foreach(businessMetricsWriter)
+          .outputMode("append")
+          .start()
+          .awaitTermination()
+        //option 2
+        // we use the accumulator to pile up the counts of
+        // invalid records
+        // metrics registry will log to ALA
+        val processedInputCount = AppAccumulators.getProcessedInputCountInstance(spark.sparkContext)
+        processedInputCount.add(invalidTaxiDataRecords.count())
 
         val validTaxiDataRecords = mergedTaxiDataRecords.filter(record => record.isValidRecord)
 
