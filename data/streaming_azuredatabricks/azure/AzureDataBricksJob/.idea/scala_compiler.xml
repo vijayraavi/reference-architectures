@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ScalaCompilerConfiguration">
+    <profile name="Maven 1" modules="azure-databricks-job">
+      <parameters>
+        <parameter value="-target:jvm-1.8" />
+        <parameter value="-dependencyfile" />
+        <parameter value="C:\projects\data\AzureDataBricksJob\target/.scala_dependencies" />
+      </parameters>
+    </profile>
+  </component>
+</project>
