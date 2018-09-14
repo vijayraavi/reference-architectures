@@ -15,7 +15,7 @@ import com.github.ptvlogistics.log4jala._
 import org.apache.log4j._
 
 class BusinessMetricsWriter extends ForeachWriter[Row] {
-  @transient var logger = Logger.getLogger("Log4jALABizLogger")
+  @transient lazy val logger = Logger.getLogger("Log4jALALogger")
 
   def open(partitionId: Long,version: Long): Boolean = {
 
@@ -25,14 +25,12 @@ class BusinessMetricsWriter extends ForeachWriter[Row] {
   def process(value: Row): Unit = {
 
     try {
-      logger = Logger.getLogger("Log4jALABizLogger")
       //parsing the row fields / values as business telemetry
       logger.info(Utils.parseRow(value))
     }
     catch {
       case e: Exception => {
         //parsing the error payload and logging to ala
-        logger = Logger.getLogger("Log4jALAError")
         logger.error(Utils.parseError(e))
       }
     }

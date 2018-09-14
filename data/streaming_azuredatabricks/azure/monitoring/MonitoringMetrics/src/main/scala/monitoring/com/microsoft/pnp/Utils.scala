@@ -4,65 +4,37 @@ import java.time.{ZoneId, ZonedDateTime}
 import java.util.HashMap
 
 import org.apache.spark.sql.streaming.StreamingQueryListener.QueryProgressEvent
-import org.json4s.{DefaultFormats, JObject}
-import org.json4s.native.JsonMethods.parse
-
 import org.apache.spark._
-
 import org.apache.spark.streaming._
-
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions.get_json_object
-
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.streaming._
-import com.google.gson.Gson;
+import com.google.gson.Gson
 import org.apache.spark.sql._
 import com.github.ptvlogistics.log4jala._
 import org.apache.log4j._
+import org.apache.spark.util.LongAccumulator
 
 
 object Utils {
 
-  implicit val formats = DefaultFormats
 
   def parsePayload(event: QueryProgressEvent): HashMap[String, AnyRef]={
     val date = java.time.format
       .DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneId.of("GMT")))
 
-    var dataJson = parse(event.progress.json).asInstanceOf[JObject]
-    var dataValue = dataJson \ "durationMs" \ "triggerExecution"
-    val triggerExecution: Double = dataValue.extract[Double]
-
-    dataValue = dataJson \ "durationMs" \ "getBatch"
-    val getBatch: Double = dataValue.extract[Double]
-
-    dataValue = dataJson \ "id"
-    val id: String = dataValue.extract[String]
-
-    dataValue = dataJson \ "numInputRows"
-    val inputRows: Integer = dataValue.extract[Integer]
-
-    dataValue = dataJson \ "sink" \ "description"
-    val sink: String = dataValue.extract[String]
-
-    dataValue = dataJson \ "inputRowsPerSecond"
-    val inRowsPerSecond: Double = dataValue.extract[Double]
-
-    dataValue = dataJson \ "processedRowsPerSecond"
-    val procRowsPerSecond: Double = dataValue.extract[Double]
-
     val metrics = new HashMap[String, AnyRef]()
 
-    metrics.put("name",event.progress.name)
-    metrics.put("id",  id)
-    metrics.put("sink",  sink)
-    metrics.put("triggerExecution",  triggerExecution.asInstanceOf[AnyRef])
-    metrics.put("getBatch", getBatch.asInstanceOf[AnyRef])
-    metrics.put("inputRowsPerSecond",  inRowsPerSecond.asInstanceOf[AnyRef])
-    metrics.put("procRowsPerSecond",  procRowsPerSecond.asInstanceOf[AnyRef])
-    metrics.put("inputRows",  inputRows.asInstanceOf[AnyRef])
+    metrics.put("id",  event.progress.id)
+    metrics.put("sink", event.progress.sink)
+    metrics.put("durationms",
+      event.progress.durationMs.asInstanceOf[AnyRef])
+    metrics.put("inputRowsPerSecond",  event.progress.inputRowsPerSecond.asInstanceOf[AnyRef])
+    metrics.put("procRowsPerSecond",  event.progress.processedRowsPerSecond.asInstanceOf[AnyRef])
+    metrics.put("inputRows",  event.progress.numInputRows.asInstanceOf[AnyRef])
     metrics.put("DateValue",date.toString())
+
 
     metrics
 
@@ -80,6 +52,9 @@ object Utils {
 
   }
 
+
+
+
   def parseRow(row: Row) : HashMap[String,AnyRef] ={
     val date = java.time.format
       .DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneId.of("GMT")))
@@ -87,10 +62,11 @@ object Utils {
     val bizmetrics = new HashMap[String, AnyRef]()
 
 
-
-    for (i <- 0 until row.length-1) {
+    for (i <- 0 until row.length) {
       bizmetrics.put(row.schema.fields(i).name,row(i).asInstanceOf[AnyRef])
     }
+
+
 
     bizmetrics.put("DateValue",date.toString())
 
