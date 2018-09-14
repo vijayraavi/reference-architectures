@@ -21,4 +21,19 @@ object Utils {
 
     Try(new Timestamp(DateTime.parse(str, sourceEnqueTimeFormat).getMillis)).toOption
   }
+
+  def parseRow(row: Row) : HashMap[String,AnyRef] ={
+    val date = java.time.format
+      .DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneId.of("GMT")))
+
+    val bizmetrics = new HashMap[String, AnyRef]()
+
+    for (i <- 0 until row.length) {
+      bizmetrics.put(row.schema.fields(i).name,row(i).asInstanceOf[AnyRef])
+    }
+
+    bizmetrics.put("DateValue",date.toString())
+
+    bizmetrics
+  }
 }
