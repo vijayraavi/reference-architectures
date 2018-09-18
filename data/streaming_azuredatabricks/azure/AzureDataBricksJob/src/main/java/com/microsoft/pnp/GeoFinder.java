@@ -3,14 +3,10 @@ package com.microsoft.pnp;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
-import org.geotools.data.DataStore;
-import org.geotools.data.DataStoreFinder;
 import org.geotools.data.FeatureSource;
 import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.collection.SpatialIndexFeatureSource;
 import org.geotools.data.shapefile.ShapefileDataStore;
-import org.geotools.data.shapefile.ShapefileDataStoreFactory;
-import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
@@ -44,7 +40,6 @@ public class GeoFinder implements Serializable {
         this.geometryFactory = new GeometryFactory();
     }
 
-    //    public Optional<String> getNeighborhood(double longitude, double latitude) {
     public Optional<String> getNeighborhood(double longitude, double latitude) {
         logger.debug(String.format("Searching for coordinate (%f, %f)", longitude, latitude));
         Point point = this.geometryFactory.createPoint(new Coordinate(longitude, latitude));
@@ -65,16 +60,14 @@ public class GeoFinder implements Serializable {
             logger.warn(String.format("Error searching for coordinate (%f, %f)", longitude, latitude), ex);
         }
 
-        return Optional.of("defaultNeighbourhood");
+        return Optional.of("defaultNeighborhood");
     }
 
-    public static GeoFinder createGeoFinder(URL shapefile) throws IOException {
-        URL shapeFileUrl = new URL("jar:" + shapefile + "!/ZillowNeighborhoods-NY.shp");
+    public static GeoFinder createGeoFinder(URL shapeFileUrl) throws IOException {
         try {
             logger.info(String.format("Using shapefile: %s", shapeFileUrl));
             Map<String, String> connect = new HashMap<>();
             connect.put("url", shapeFileUrl.toString());
-            //DataStore dataStore = DataStoreFinder.getDataStore(connect);
             ShapefileDataStore dataStore = new ShapefileDataStore(shapeFileUrl);
             String[] typeNames = dataStore.getTypeNames();
             String typeName = typeNames[0];

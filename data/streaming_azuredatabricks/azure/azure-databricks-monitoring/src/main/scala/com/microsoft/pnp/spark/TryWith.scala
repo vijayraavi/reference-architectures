@@ -1,4 +1,4 @@
-package com.microsoft.pnp
+package com.microsoft.pnp.spark
 
 import scala.util.control.NonFatal
 import scala.util.{Failure, Try}

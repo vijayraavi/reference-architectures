@@ -3,7 +3,8 @@ package org.apache.spark.sql.streaming
 import java.util.HashMap
 import java.util.UUID.randomUUID
 
-import com.microsoft.pnp.{SparkSuiteBase, _}
+import com.microsoft.pnp.SparkSuiteBase
+import com.microsoft.pnp.spark.Utils
 import org.apache.spark.sql.streaming.StreamingQueryListener.QueryProgressEvent
 import org.scalatest.Matchers
 

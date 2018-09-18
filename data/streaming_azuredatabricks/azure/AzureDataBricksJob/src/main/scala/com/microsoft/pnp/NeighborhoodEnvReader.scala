@@ -1,17 +1,23 @@
 package com.microsoft.pnp
 
+import java.net.URL
+
 object NeighborhoodEnvReader {
 
 
-  def getNeighborhoodFilePath(): String = {
+  def getNeighborhoodFileURL(): URL = {
 
-    var neighbourhoodFilePath = System.getenv("NEIGHBOURHOOD_FILE_PATH")
-    if ((neighbourhoodFilePath == null) || (neighbourhoodFilePath.trim == "")) {
-
+    val neighborhoodFilePath = System.getenv("NEIGHBORHOOD_FILE_PATH")
+    if ((neighborhoodFilePath == null) || (neighborhoodFilePath.trim == "")) {
       // this is hook for unit test cases
-      neighbourhoodFilePath = "./ZillowNeighborhoods-NY.zip"
+      new URL(
+        String.format(
+          "jar:%s!/ZillowNeighborhoods-NY.shp",
+          getClass.getClassLoader.getResource("./ZillowNeighborhoods-NY.zip")
+        )
+      )
+    } else {
+      new URL(neighborhoodFilePath)
     }
-
-    neighbourhoodFilePath
   }
 }

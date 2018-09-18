@@ -3,8 +3,8 @@ package org.apache.spark
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import org.apache.spark.internal.Logging
 import com.microsoft.pnp.loganalytics.LogAnalyticsClient
+import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler.SparkListenerEvent
 import org.apache.spark.streaming.scheduler.StreamingListenerEvent
 import org.apache.spark.util.JsonProtocol
@@ -17,7 +17,7 @@ trait LogAnalytics {
   protected val config: LogAnalyticsConfiguration
 
   protected lazy val logAnalyticsClient = new LogAnalyticsClient(
-    config.workspaceId, config.workspaceKey)//, config.logType, config.timestampFieldName)
+    config.workspaceId, config.workspaceKey)
 
   private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
@@ -53,7 +53,6 @@ trait LogAnalytics {
     if (s.isDefined) {
       logDebug(s"Sending event to Log Analytics")
       logDebug(s.get)
-      //logAnalyticsClient.send(s.get)
       logAnalyticsClient.send(s.get, config.logType, config.timestampFieldName)
     }
   }

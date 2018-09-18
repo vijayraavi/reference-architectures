@@ -1,4 +1,4 @@
-package com.microsoft.pnp
+package com.microsoft.pnp.spark
 
 import com.microsoft.pnp.slf4j.MDCCloseableFactory
 import org.apache.spark.sql.streaming.StreamingQueryListener

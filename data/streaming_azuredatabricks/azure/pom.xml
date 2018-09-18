@@ -59,66 +59,28 @@
                 <version>3.0.3</version>
                 <scope>test</scope>
             </dependency>
-            <!--<dependency>-->
-                <!--<groupId>org.scala-lang</groupId>-->
-                <!--<artifactId>scala-library</artifactId>-->
-                <!--<version>${scala.version}</version>-->
-                <!--<scope>provided</scope>-->
-            <!--</dependency>-->
-            <!--<dependency>-->
-                <!--<groupId>org.apache.spark</groupId>-->
-                <!--<artifactId>spark-core_2.11</artifactId>-->
-                <!--<version>2.3.1</version>-->
-                <!--<scope>provided</scope>-->
-            <!--</dependency>-->
-            <!--<dependency>-->
-                <!--<groupId>org.apache.spark</groupId>-->
-                <!--<artifactId>spark-sql_2.11</artifactId>-->
-                <!--<version>2.3.1</version>-->
-                <!--<scope>provided</scope>-->
-            <!--</dependency>-->
-            <!--<dependency>-->
-                <!--<groupId>org.apache.spark</groupId>-->
-                <!--<artifactId>spark-streaming_2.11</artifactId>-->
-                <!--<version>2.3.1</version>-->
-                <!--<scope>provided</scope>-->
-            <!--</dependency>-->
         </dependencies>
     </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <!--<version>${scala.version}</version>-->
-            <!--<scope>provided</scope>-->
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_2.11</artifactId>
-            <!--<version>2.3.1</version>-->
-            <!--<scope>provided</scope>-->
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_2.11</artifactId>
-            <!--<version>2.3.1</version>-->
-            <!--<scope>provided</scope>-->
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-streaming_2.11</artifactId>
-            <!--<version>2.3.1</version>-->
-            <!--<scope>provided</scope>-->
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>${slf4j.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -155,8 +117,6 @@
                                     <arg>${project.build.directory}/.scala_dependencies</arg>
                                 </args>
                                 <javacArgs>
-                                    <!--<javacArg>-Xlint:unchecked</javacArg>-->
-                                    <!--<javacArg>-Xlint:deprecation</javacArg>-->
                                     <javacArg>-source</javacArg>
                                     <javacArg>${maven.compiler.source}</javacArg>
                                     <javacArg>-target</javacArg>
@@ -247,8 +207,6 @@
                         <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                         <junitxml>.</junitxml>
                         <filereports>TestSuiteReport.txt</filereports>
-                        <!-- Comma separated list of JUnit test class names to execute -->
-                        <!--<jUnitClasses>samples.AppTest</jUnitClasses>-->
                     </configuration>
                     <executions>
                         <execution>
@@ -261,78 +219,7 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-        <plugins>
-            <!--<plugin>-->
-                <!--&lt;!&ndash; see http://davidb.github.com/scala-maven-plugin &ndash;&gt;-->
-                <!--<groupId>net.alchim31.maven</groupId>-->
-                <!--<artifactId>scala-maven-plugin</artifactId>-->
-                <!--<version>3.4.2</version>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<goals>-->
-                            <!--<goal>compile</goal>-->
-                            <!--<goal>testCompile</goal>-->
-                        <!--</goals>-->
-                        <!--<configuration>-->
-                            <!--<scalaVersion>${scala.version}</scalaVersion>-->
-                            <!--<scalaCompatVersion>${scala.compat.version}</scalaCompatVersion>-->
-                            <!--<args>-->
-                                <!--<arg>-target:jvm-${maven.compiler.target}</arg>-->
-                                <!--<arg>-dependencyfile</arg>-->
-                                <!--<arg>${project.build.directory}/.scala_dependencies</arg>-->
-                            <!--</args>-->
-                            <!--<javacArgs>-->
-                                <!--&lt;!&ndash;<javacArg>-Xlint:unchecked</javacArg>&ndash;&gt;-->
-                                <!--&lt;!&ndash;<javacArg>-Xlint:deprecation</javacArg>&ndash;&gt;-->
-                                <!--<javacArg>-source</javacArg>-->
-                                <!--<javacArg>${maven.compiler.source}</javacArg>-->
-                                <!--<javacArg>-target</javacArg>-->
-                                <!--<javacArg>${maven.compiler.target}</javacArg>-->
-                            <!--</javacArgs>-->
-                        <!--</configuration>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-            <!--</plugin>-->
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-compiler-plugin</artifactId>-->
-                <!--<version>3.8.0</version>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<goals>-->
-                            <!--<goal>compile</goal>-->
-                            <!--<goal>testCompile</goal>-->
-                        <!--</goals>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-                <!--<configuration>-->
-                    <!--<source>${maven.compiler.source}</source>-->
-                    <!--<target>${maven.compiler.target}</target>-->
-                    <!--<compilerArgs>-->
-                        <!--<arg>-Xlint</arg>-->
-                    <!--</compilerArgs>-->
-                <!--</configuration>-->
-            <!--</plugin>-->
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-dependency-plugin</artifactId>-->
-                <!--<version>3.0.2</version>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<id>copy-dependencies</id>-->
-                        <!--<phase>package</phase>-->
-                        <!--<goals>-->
-                            <!--<goal>copy-dependencies</goal>-->
-                        <!--</goals>-->
-                        <!--<configuration>-->
-                            <!--<includeScope>runtime</includeScope>-->
-                            <!--<outputDirectory>${project.build.directory}</outputDirectory>-->
-                        <!--</configuration>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-            <!--</plugin>-->
-
-            <plugin>
+        <plugins>            <plugin>
                 <!-- see http://davidb.github.com/scala-maven-plugin -->
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
@@ -357,35 +244,6 @@
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest-maven-plugin</artifactId>
             </plugin>
-            <!-- Enable surefire and scalatest in all children, in one place: -->
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-surefire-plugin</artifactId>-->
-            <!--</plugin>-->
-            <!--<plugin>-->
-                <!--<groupId>org.scalatest</groupId>-->
-                <!--<artifactId>scalatest-maven-plugin</artifactId>-->
-            <!--</plugin>-->
-            <!--<plugin>-->
-                <!--<groupId>org.scalatest</groupId>-->
-                <!--<artifactId>scalatest-maven-plugin</artifactId>-->
-                <!--<version>2.0.0</version>-->
-                <!--<configuration>-->
-                    <!--<reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>-->
-                    <!--<junitxml>.</junitxml>-->
-                    <!--<filereports>TestSuiteReport.txt</filereports>-->
-                    <!--&lt;!&ndash; Comma separated list of JUnit test class names to execute &ndash;&gt;-->
-                    <!--&lt;!&ndash;<jUnitClasses>samples.AppTest</jUnitClasses>&ndash;&gt;-->
-                <!--</configuration>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<id>test</id>-->
-                        <!--<goals>-->
-                            <!--<goal>test</goal>-->
-                        <!--</goals>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-            <!--</plugin>-->
         </plugins>
     </build>
 </project>

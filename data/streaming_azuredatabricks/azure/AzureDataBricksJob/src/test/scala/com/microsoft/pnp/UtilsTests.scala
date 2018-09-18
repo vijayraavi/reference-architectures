@@ -7,7 +7,6 @@ import org.scalatest.Matchers
 class UtilsTests[sql] extends SparkSuiteBase with Matchers {
 
   test("should_parse_row_telemetry") {
-
     val schema = StructType(
       StructField("col1", StringType) ::
         StructField("col2", StringType) ::
@@ -16,7 +15,6 @@ class UtilsTests[sql] extends SparkSuiteBase with Matchers {
     val row = new GenericRowWithSchema(values, schema)
 
     val metrics = Utils.parseRow(row)
-
     assert(metrics.get("col1") === "value1")
     assert(metrics.get("col2") === "value2")
     assert(metrics.get("col3") === 1)
