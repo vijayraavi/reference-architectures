@@ -1,11 +1,9 @@
-package com.microsoft.pnp
+package com.microsoft.pnp.spark
 
 import java.time.{ZoneId, ZonedDateTime}
 import java.util.HashMap
 
 import org.apache.spark.sql.streaming.StreamingQueryListener.QueryProgressEvent
-import org.apache.spark.sql._
-
 
 object Utils {
   def parsePayload(event: QueryProgressEvent): HashMap[String, AnyRef]={
@@ -23,30 +21,4 @@ object Utils {
 
     metrics
   }
-
-//  def parseError(e:Exception) : HashMap[String,AnyRef] ={
-//    val date = java.time.format
-//      .DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneId.of("GMT")))
-//    val error = new HashMap[String, AnyRef]()
-//    error.put("message",e.getLocalizedMessage)
-//    error.put("stack",  e.getStackTrace)
-//    error.put("DateValue",date.toString())
-//
-//    error
-//  }
-
-//  def parseRow(row: Row) : HashMap[String,AnyRef] ={
-//    val date = java.time.format
-//      .DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneId.of("GMT")))
-//
-//    val bizmetrics = new HashMap[String, AnyRef]()
-//
-//    for (i <- 0 until row.length) {
-//      bizmetrics.put(row.schema.fields(i).name,row(i).asInstanceOf[AnyRef])
-//    }
-//
-//    bizmetrics.put("DateValue",date.toString())
-//
-//    bizmetrics
-//  }
 }

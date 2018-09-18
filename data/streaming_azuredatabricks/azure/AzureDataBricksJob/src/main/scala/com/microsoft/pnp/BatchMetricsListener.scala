@@ -1,17 +1,12 @@
 package com.microsoft.pnp
 
-import org.apache.log4j._
-import org.apache.spark.streaming.scheduler.StreamingListener
-import org.apache.spark.streaming.scheduler._
-
+import org.apache.spark.streaming.scheduler.{StreamingListener, _}
 import org.json4s._
-
 
 class BatchMetricsListener() extends StreamingListener {
 
 
   implicit val formats = DefaultFormats
-  lazy val logger:Logger = Logger.getLogger("Log4jALALogger")
 
   override def onStreamingStarted(streamingStarted: StreamingListenerStreamingStarted): Unit = {
 

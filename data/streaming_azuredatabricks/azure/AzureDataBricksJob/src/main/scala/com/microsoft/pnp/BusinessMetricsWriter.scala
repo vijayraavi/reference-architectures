@@ -1,6 +1,7 @@
 package com.microsoft.pnp
 
 import com.microsoft.pnp.slf4j.MDCCloseableFactory
+import com.microsoft.pnp.spark.TryWith
 import org.apache.spark.sql._
 import org.slf4j.{Logger, LoggerFactory}
 

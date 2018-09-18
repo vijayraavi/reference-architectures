@@ -8,7 +8,6 @@ abstract class SparkSuiteBase extends FunSuite {
 
 }
 
-
 object SparkSuiteBase {
   private val master = "local[*]"
   private val appName = "data_load_testing"

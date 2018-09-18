@@ -5,7 +5,6 @@ import java.time.{ZoneId, ZonedDateTime}
 import java.util.HashMap
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.streaming.StreamingQueryListener.QueryProgressEvent
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 import org.json4s.DefaultFormats

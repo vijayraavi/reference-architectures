@@ -1,11 +1,12 @@
 package org.apache.spark.metrics.sink
 
 import java.util.Properties
+
 import com.codahale.metrics.MetricRegistry
 import io.dropwizard.metrics.loganalytics.LogAnalyticsReporter
-import org.apache.spark.{LogAnalyticsSinkConfiguration, SecurityManager}
 import org.apache.spark.internal.Logging
 import org.apache.spark.metrics.MetricsSystem
+import org.apache.spark.{LogAnalyticsSinkConfiguration, SecurityManager}
 
 private class LogAnalyticsSink(
                                  val property: Properties,

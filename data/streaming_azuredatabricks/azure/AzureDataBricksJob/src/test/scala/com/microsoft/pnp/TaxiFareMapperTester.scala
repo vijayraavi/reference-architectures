@@ -26,33 +26,25 @@ class TaxiFareMapperTester extends SparkSuiteBase with Matchers {
 
     }
     assert(shouldSetTrueInSuccessCase)
-
   }
 
   test("csv string with only comma separated  value fields  and no header fields should be a invalid ") {
-
     val inputString = "value1,value2,value3"
 
     var shouldSetTrueInFailureCase = false
     TaxiFareMapper.validateHeaderEmbededCsvString(inputString) match {
-
       case Success(_) => shouldSetTrueInFailureCase = false
       case Failure(_) => shouldSetTrueInFailureCase = true
-
     }
     assert(shouldSetTrueInFailureCase)
-
   }
 
   test("csv content with less than 11 fields") {
-
     val invalidCsvContent = "2013000717,2013000714,CMT,2013-01-01 00:04:27,CRD,8.5,0.5,0.5,2.37,0"
-
     var shouldSetTrueInFailureCase = false
     var actualErrorMessage = ""
 
     Try(TaxiFareMapper.mapCsvToTaxiFare(invalidCsvContent)) match {
-
       case Success(_) => shouldSetTrueInFailureCase = false
       case Failure(exception) =>
         shouldSetTrueInFailureCase = true
@@ -62,6 +54,5 @@ class TaxiFareMapperTester extends SparkSuiteBase with Matchers {
     val expectedErrorMessage = TaxiFareMapper.invalidTaxiFareCsv
     assert(shouldSetTrueInFailureCase)
     assert(expectedErrorMessage.contentEquals(actualErrorMessage))
-
   }
 }

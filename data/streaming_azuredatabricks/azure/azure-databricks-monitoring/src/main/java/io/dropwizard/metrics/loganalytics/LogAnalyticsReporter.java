@@ -1,7 +1,6 @@
 package io.dropwizard.metrics.loganalytics;
 
 import com.codahale.metrics.*;
-import com.codahale.metrics.Timer;
 import com.codahale.metrics.json.MetricsModule;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,7 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
 
 public class LogAnalyticsReporter extends ScheduledReporter {
@@ -198,8 +199,7 @@ public class LogAnalyticsReporter extends ScheduledReporter {
                 filter));
         this.logAnalyticsClient = new LogAnalyticsClient(
                 this.workspaceId,
-                this.workspaceKey);//,
-                //this.logType);
+                this.workspaceKey);
     }
 
     @Override
@@ -240,7 +240,6 @@ public class LogAnalyticsReporter extends ScheduledReporter {
 
         try {
             String json = this.mapper.writer().writeValueAsString(nodes);
-            //this.logAnalyticsClient.send(json);
             this.logAnalyticsClient.send(json, this.logType);
         } catch (IOException ioe) {
             System.out.println(ioe);
