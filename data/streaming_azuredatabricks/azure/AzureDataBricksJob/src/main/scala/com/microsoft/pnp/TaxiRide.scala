@@ -15,7 +15,7 @@ case class TaxiRide(rateCode: Int,
                     hackLicense: Long,
                     vendorId: String,
                     pickupTime: String,
-                    var neigbhourHood: String = "defaultNeighbourhood")
+                    var dropOffNeigbhorHood: String = "defaultDropOffNeighborhood")
   extends TaxiData
     with Serializable
 

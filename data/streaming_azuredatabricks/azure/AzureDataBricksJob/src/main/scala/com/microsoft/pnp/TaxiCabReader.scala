@@ -3,13 +3,11 @@ package com.microsoft.pnp
 
 import java.sql.Timestamp
 
-import org.apache.spark.SparkEnv
 import org.apache.spark.eventhubs.{ConnectionStringBuilder, EventHubsConf, EventPosition}
-import org.apache.spark.metrics.source.{AppAccumulators, AppMetrics}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.streaming.{GroupState, GroupStateTimeout, Trigger}
-import org.apache.spark.sql.functions.count
-import org.apache.spark.sql.functions.lit
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.streaming.{GroupState, GroupStateTimeout}
+
 import scala.util.{Failure, Success, Try}
 
 object TaxiCabReader {
@@ -17,6 +15,7 @@ object TaxiCabReader {
   val taxiRideEventHubName = "taxi-ride"
   val taxiFareEventHubName = "taxi-fare"
   val sparkStreamFormatForEventHub = "eventhubs"
+  val groupedRecordsEventHubName = "groupedenrichedtaxidatarecords"
   val waterMarkTimeDuriation = "15 minutes"
   val maxThresholdBetweenStreams = "50 seconds"
   val errorRecordsEventHubName = "taxi-ride" //TODO get one defined. time sbeing using an existing one
@@ -29,15 +28,15 @@ object TaxiCabReader {
 
         val spark = SparkSession.builder().config("spark.master", "local[10]").getOrCreate()
 
-        @transient val appMetrics = new AppMetrics(spark.sparkContext)
-        appMetrics.registerGauge("metricsregistrytest.processed",
-          AppAccumulators.getProcessedInputCountInstance(spark.sparkContext))
-        SparkEnv.get.metricsSystem.registerSource(appMetrics)
+        //        @transient val appMetrics = new AppMetrics(spark.sparkContext)
+        //        appMetrics.registerGauge("metricsregistrytest.processed",
+        //          AppAccumulators.getProcessedInputCountInstance(spark.sparkContext))
+        //        SparkEnv.get.metricsSystem.registerSource(appMetrics)
 
         import spark.implicits._
 
 
-        spark.streams.addListener(new StreamingMetricsListener())
+        //        spark.streams.addListener(new StreamingMetricsListener())
         // Taxi ride infra setup -
 
         val rideConnectionString = ConnectionStringBuilder(arguments.rideEventHubConnectionString)
@@ -63,6 +62,15 @@ object TaxiCabReader {
           .build
 
         val errorEventHubConf = EventHubsConf(errorRecordsEventHubConnectionString)
+          .setStartingPosition(EventPosition.fromEndOfStream)
+
+        // grouped records infra set up -
+
+        val groupedRecordsEventHubConnectionString = ConnectionStringBuilder(arguments.groupedEnrichedTaxiDataRecordsEventHubConnectionString)
+          .setEventHubName(groupedRecordsEventHubName)
+          .build
+
+        val groupedRecordsEventHubConf = EventHubsConf(groupedRecordsEventHubConnectionString)
           .setStartingPosition(EventPosition.fromEndOfStream)
 
 
@@ -101,56 +109,65 @@ object TaxiCabReader {
 
         val mergedTaxiDataRecords = taxiFareStream.union(taxiRideStream)
 
-        val invalidTaxiDataRecords = mergedTaxiDataRecords.filter(record => !record.isValidRecord)
-
+        //        val invalidTaxiDataRecords = mergedTaxiDataRecords.filter(record => !record.isValidRecord)
+        //        invalidTaxiDataRecords
+        //          .writeStream
+        //          .format(sparkStreamFormatForEventHub)
+        //          .outputMode("update")
+        //          .options(errorEventHubConf.toMap)
+        //          .trigger(Trigger.ProcessingTime("25 seconds"))
+        //          .option("checkpointLocation", "./checkpoint/") // TODO paramterize checkpoint location and make it point to azure blob
+        //          .start()
+        //                  .awaitTermination()
 
         // option 1
         // we push the # of invalid taxi records to ALA
         // as a business metrics
         // using a business metris writer for high scala and performance
-        val businessMetricsWriter = new BusinessMetricsWriter()
-        invalidTaxiDataRecords.toDF()
-          .groupBy("isValidRecord")
-          .agg(
-            count(lit(1)).alias("CountInvalidRecords")
-          )
-          .writeStream
-          .foreach(businessMetricsWriter)
-          .outputMode("append")
-          .start()
-          .awaitTermination()
+        //        val businessMetricsWriter = new BusinessMetricsWriter()
+        //        invalidTaxiDataRecords.toDF()
+        //          .groupBy("isValidRecord")
+        //          .agg(
+        //            count(lit(1)).alias("CountInvalidRecords")
+        //          )
+        //          .writeStream
+        //          .foreach(businessMetricsWriter)
+        //          .outputMode("append")
+        //          .start()
+        //          .awaitTermination()
         //option 2
         // we use the accumulator to pile up the counts of
         // invalid records
         // metrics registry will log to ALA
-        val processedInputCount = AppAccumulators.getProcessedInputCountInstance(spark.sparkContext)
-        processedInputCount.add(invalidTaxiDataRecords.count())
+        //        val processedInputCount = AppAccumulators.getProcessedInputCountInstance(spark.sparkContext)
+        //        processedInputCount.add(invalidTaxiDataRecords.count())
 
         val validTaxiDataRecords = mergedTaxiDataRecords.filter(record => record.isValidRecord)
-
 
         val groupedEnrichedTaxiDataRecords = validTaxiDataRecords.groupByKey(_.taxiDataRecordKey)
           .mapGroupsWithState(GroupStateTimeout.ProcessingTimeTimeout())(updateAcrossTaxiDataPerKeyRecords)
           .filter(groupedRecordWithState => groupedRecordWithState.expired)
+          .as[TaxiDataPerKeyState]
 
 
-        invalidTaxiDataRecords
+        val dropOffRecords = groupedEnrichedTaxiDataRecords
+          .map(x => DropOffRecordMapper.mapEnrichedTaxiDataRecordToDropOffRecord(x))
+          .as[DropOffRecord]
+
+        dropOffRecords.toDF("neighborhood", "eventTime", "eventDay", "eventHour", "eventMin", "event15MinWindow", "key")
+          .select(to_json(struct($"neighborhood"
+            , $"eventTime"
+            , $"eventDay"
+            , $"eventHour"
+            , $"eventMin"
+            , $"event15MinWindow"
+            , $"key"
+          )).as("body"))
           .writeStream
           .format(sparkStreamFormatForEventHub)
+          .options(groupedRecordsEventHubConf.toMap)
           .outputMode("update")
-          .options(errorEventHubConf.toMap)
-          .trigger(Trigger.ProcessingTime("25 seconds"))
-          .option("checkpointLocation", "./checkpoint/") // TODO paramterize checkpoint location and make it point to azure blob
-          .start()
-
-
-//        val neibhourhoods = groupedEnrichedTaxiDataRecords.filter(x => x.taxiRide != null).map(x => x.taxiRide.neigbhourHood)
-
-
-        groupedEnrichedTaxiDataRecords
-          .writeStream
-          .outputMode("update")
-          .format("console")
+          .option("checkpointLocation", "./groupedRecordscheckpoint/")
           .start()
           .awaitTermination()
 
@@ -172,12 +189,25 @@ object TaxiCabReader {
                                   var taxiRide: TaxiRide,
                                   var taxiFare: TaxiFare,
                                   var expired: Boolean)
+    extends Serializable
+
+
+  case class DropOffNeighborhoodState(
+                                       var dropOffRecordKey: String,
+                                       var dropOffNeighborhood: String,
+                                       var eventWindow: String,
+                                       var distinctDaysSeen: Int,
+                                       var count: Long,
+                                       var currentDay: String,
+                                       var avg: Float
+                                     )
 
 
   case class Arguments(
                         rideEventHubConnectionString: String,
                         fareEventHubConnectionString: String,
-                        errorRecordsEventHubConnectionString: String
+                        errorRecordsEventHubConnectionString: String,
+                        groupedEnrichedTaxiDataRecordsEventHubConnectionString: String
                       )
 
 
@@ -191,9 +221,37 @@ object TaxiCabReader {
     Arguments(
       args(0),
       args(1),
-      args(2)
+      args(2),
+      args(3)
     )
 
+  }
+
+  def updateDropOffNeighborhoodStateWithDropOffNeibhorHoodRecord(state: DropOffNeighborhoodState, input: DropOffRecord): DropOffNeighborhoodState = {
+
+    if (state.dropOffRecordKey == input.key) {
+
+      state.dropOffNeighborhood = input.neighborhood
+      state.count = state.count + 1
+      state.eventWindow = input.event15MinWindow
+      if (state.currentDay != input.eventDay) {
+        state.distinctDaysSeen = state.distinctDaysSeen + 1
+      }
+      state.avg = state.count / state.distinctDaysSeen
+
+
+    }
+    else {
+
+      state.dropOffNeighborhood = input.neighborhood
+      state.count = state.count + 1
+      state.currentDay = input.eventDay
+      state.distinctDaysSeen = 1
+      state.avg = 1 // count/distinctDaysseen = 1/1
+      state.eventWindow = input.event15MinWindow
+    }
+
+    state
   }
 
 
@@ -246,6 +304,32 @@ object TaxiCabReader {
         state.expired = false
       }
     }
+
+    state
+
+  }
+
+
+  def updateAcrossDropOffRecordsPerNeighborhood(dropOffNeighborhood: String, inputs: Iterator[DropOffRecord],
+                                                oldState: GroupState[DropOffNeighborhoodState]): DropOffNeighborhoodState = {
+
+
+    var state: DropOffNeighborhoodState = if (oldState.exists) oldState.get
+    else DropOffNeighborhoodState(
+      "",
+      "",
+      "",
+      0,
+      0L,
+      "",
+      0.0f
+    )
+
+    for (input <- inputs) {
+      state = updateDropOffNeighborhoodStateWithDropOffNeibhorHoodRecord(state, input)
+      oldState.update(state)
+    }
+
 
     state
 

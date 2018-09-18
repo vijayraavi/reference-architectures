@@ -4,6 +4,7 @@ import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types._
 import org.scalatest.Matchers
 
+
 class UtilsTests[sql] extends SparkSuiteBase with Matchers {
 
   test("should_parse_row_telemetry") {

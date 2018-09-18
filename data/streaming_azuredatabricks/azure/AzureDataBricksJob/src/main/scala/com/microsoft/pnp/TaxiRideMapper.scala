@@ -29,7 +29,7 @@ object TaxiRideMapper {
 
           if (geoFinder != null) {
             val neighborhood = geoFinder.getNeighborhood(taxiRide.dropoffLon, taxiRide.dropoffLat)
-            taxiRide.neigbhourHood =  neighborhood.get()
+            taxiRide.dropOffNeigbhorHood =  neighborhood.get()
           }
 
 
