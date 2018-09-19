@@ -3,13 +3,14 @@ package com.microsoft.pnp
 
 import java.sql.Timestamp
 
+import com.microsoft.pnp.spark.StreamingMetricsListener
 import org.apache.spark.SparkEnv
 import org.apache.spark.eventhubs.{ConnectionStringBuilder, EventHubsConf, EventPosition}
 import org.apache.spark.metrics.source.{AppAccumulators, AppMetrics}
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions.{count, lit}
 import org.apache.spark.sql.streaming.{GroupState, GroupStateTimeout, Trigger}
-import org.apache.spark.sql.functions.count
-import org.apache.spark.sql.functions.lit
+
 import scala.util.{Failure, Success, Try}
 
 object TaxiCabReader {

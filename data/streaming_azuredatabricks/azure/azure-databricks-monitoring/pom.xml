@@ -11,6 +11,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>azure-databricks-monitoring</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <name>azure-databricks-monitoring</name>
+    <version>0.9</version>
+    <name>${project.artifactId}</name>
+    <packaging>jar</packaging>
 </project>

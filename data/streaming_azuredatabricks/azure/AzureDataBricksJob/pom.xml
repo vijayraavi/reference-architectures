@@ -7,10 +7,10 @@
         <version>1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <groupId>com.microsoft.pnp</groupId>
     <artifactId>azure-databricks-job</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>${project.artifactId}</name>
+    <packaging>jar</packaging>
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -23,7 +23,7 @@
         <dependency>
             <groupId>com.microsoft.pnp</groupId>
             <artifactId>azure-databricks-monitoring</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>0.9</version>
         </dependency>
         <dependency>
             <groupId>com.microsoft.azure</groupId>
@@ -36,31 +36,12 @@
             <artifactId>gt-shapefile</artifactId>
             <version>19.2</version>
         </dependency>
-        <!-- Test -->
-        <!--<dependency>-->
-            <!--<groupId>junit</groupId>-->
-            <!--<artifactId>junit</artifactId>-->
-            <!--<version>4.12</version>-->
-            <!--<scope>test</scope>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-            <!--<groupId>org.scalatest</groupId>-->
-            <!--<artifactId>scalatest_${scala.compat.version}</artifactId>-->
-            <!--<version>3.0.3</version>-->
-            <!--<scope>test</scope>-->
-        <!--</dependency>-->
         <dependency>
             <groupId>org.joda</groupId>
             <artifactId>joda-convert</artifactId>
             <version>2.1.1</version>
             <scope>compile</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.scala-lang.modules/scala-xml -->
-        <!--<dependency>-->
-            <!--<groupId>org.scala-lang.modules</groupId>-->
-            <!--<artifactId>scala-xml_2.11</artifactId>-->
-            <!--<version>1.0.6</version>-->
-        <!--</dependency>-->
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
@@ -78,124 +59,25 @@
     </repositories>
 
     <build>
-
-        <!--<resources>-->
-            <!--<resource>-->
-                <!--<directory>src/main/resources</directory>-->
-                <!--<includes>-->
-                    <!--<include>**/*.zip</include>-->
-                <!--</includes>-->
-            <!--</resource>-->
-        <!--</resources>-->
-        <!--&lt;!&ndash;<sourceDirectory>src/main/scala</sourceDirectory>&ndash;&gt;-->
-        <!--&lt;!&ndash;<testSourceDirectory>src/test/scala</testSourceDirectory>&ndash;&gt;-->
+        <testResources>
+            <testResource>
+                <directory>${project.basedir}</directory>
+                <includes>
+                    <include>ZillowNeighborhoods-NY.zip</include>
+                </includes>
+            </testResource>
+        </testResources>
         <plugins>
-            <!--<plugin>-->
-                <!--&lt;!&ndash; see http://davidb.github.com/scala-maven-plugin &ndash;&gt;-->
-                <!--<groupId>net.alchim31.maven</groupId>-->
-                <!--<artifactId>scala-maven-plugin</artifactId>-->
-                <!--<version>3.4.2</version>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<goals>-->
-                            <!--<goal>compile</goal>-->
-                            <!--<goal>testCompile</goal>-->
-                        <!--</goals>-->
-                        <!--<configuration>-->
-                            <!--<scalaVersion>${scala.version}</scalaVersion>-->
-                            <!--<scalaCompatVersion>${scala.compat.version}</scalaCompatVersion>-->
-                            <!--<args>-->
-                                <!--<arg>-target:jvm-${maven.compiler.target}</arg>-->
-                                <!--<arg>-dependencyfile</arg>-->
-                                <!--<arg>${project.build.directory}/.scala_dependencies</arg>-->
-                            <!--</args>-->
-                            <!--<javacArgs>-->
-                                <!--&lt;!&ndash;<javacArg>-Xlint:unchecked</javacArg>&ndash;&gt;-->
-                                <!--&lt;!&ndash;<javacArg>-Xlint:deprecation</javacArg>&ndash;&gt;-->
-                                <!--<javacArg>-source</javacArg>-->
-                                <!--<javacArg>${maven.compiler.source}</javacArg>-->
-                                <!--<javacArg>-target</javacArg>-->
-                                <!--<javacArg>${maven.compiler.target}</javacArg>-->
-                            <!--</javacArgs>-->
-                        <!--</configuration>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-            <!--</plugin>-->
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-compiler-plugin</artifactId>-->
-                <!--<version>3.8.0</version>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<goals>-->
-                            <!--<goal>compile</goal>-->
-                            <!--<goal>testCompile</goal>-->
-                        <!--</goals>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-                <!--<configuration>-->
-                    <!--<source>${maven.compiler.source}</source>-->
-                    <!--<target>${maven.compiler.target}</target>-->
-                    <!--<compilerArgs>-->
-                        <!--<arg>-Xlint</arg>-->
-                    <!--</compilerArgs>-->
-                <!--</configuration>-->
-            <!--</plugin>-->
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-surefire-plugin</artifactId>-->
-                <!--<version>2.21.0</version>-->
-                <!--<configuration>-->
-                    <!--&lt;!&ndash; Tests will be run with scalatest-maven-plugin instead &ndash;&gt;-->
-                    <!--<skipTests>true</skipTests>-->
-                <!--</configuration>-->
-            <!--</plugin>-->
-            <!--<plugin>-->
-                <!--<groupId>org.scalatest</groupId>-->
-                <!--<artifactId>scalatest-maven-plugin</artifactId>-->
-                <!--<version>2.0.0</version>-->
-                <!--<configuration>-->
-                    <!--<reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>-->
-                    <!--<junitxml>.</junitxml>-->
-                    <!--<filereports>TestSuiteReport.txt</filereports>-->
-                    <!--&lt;!&ndash; Comma separated list of JUnit test class names to execute &ndash;&gt;-->
-                    <!--&lt;!&ndash;<jUnitClasses>samples.AppTest</jUnitClasses>&ndash;&gt;-->
-                <!--</configuration>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<id>test</id>-->
-                        <!--<goals>-->
-                            <!--<goal>test</goal>-->
-                        <!--</goals>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-            <!--</plugin>-->
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-shade-plugin</artifactId>-->
-                <!--<version>3.1.1</version>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<phase>package</phase>-->
-                        <!--<goals>-->
-                            <!--<goal>shade</goal>-->
-                        <!--</goals>-->
-                        <!--<configuration>-->
-                            <!--<minimizeJar>true</minimizeJar>-->
-                            <!--<filters>-->
-                                <!--<filter>-->
-                                    <!--<artifact>*:*</artifact>-->
-                                    <!--<excludes>-->
-                                        <!--<exclude>META-INF/*.SF</exclude>-->
-                                        <!--<exclude>META-INF/*.DSA</exclude>-->
-                                        <!--<exclude>META-INF/*.RSA</exclude>-->
-                                    <!--</excludes>-->
-                                <!--</filter>-->
-                            <!--</filters>-->
-                        <!--</configuration>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-            <!--</plugin>-->
+            <plugin>
+                <groupId>org.scalatest</groupId>
+                <artifactId>scalatest-maven-plugin</artifactId>
+                <configuration>
+                    <!--<debugForkedProcess>true</debugForkedProcess>-->
+                    <!--<environmentVariables>-->
+                        <!--<NEIGHBORHOOD_FILE_PATH>jar:file:/C:/Source/mspnp/reference-architectures/data/streaming_azuredatabricks/azure/AzureDataBricksJob/ZillowNeighborhoods-NY.zip!/ZillowNeighborhoods-NY.shp</NEIGHBORHOOD_FILE_PATH>-->
+                    <!--</environmentVariables>-->
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
