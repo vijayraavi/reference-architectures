@@ -192,9 +192,9 @@
                         bool sendRideDataFirst) ParseArguments()
         {
 
-            var rideConnectionString = Environment.GetEnvironmentVariable("RIDE_EVENT_HUB");
-            var fareConnectionString = Environment.GetEnvironmentVariable("FARE_EVENT_HUB");
-            var rideDataFilePath = Environment.GetEnvironmentVariable("RIDE_DATA_FILE_PATH");
+            var rideConnectionString = "Endpoint=sb://rs-eh-ns.servicebus.windows.net/;SharedAccessKeyName=taxi-ride-asa-access-policy;SharedAccessKey=/GjrSZc1uXKlwnrbXikYUEwcC++zE9nGJm4cRmvUlvw=;EntityPath=taxi-ride";
+            var fareConnectionString = "Endpoint=sb://rs-eh-ns.servicebus.windows.net/;SharedAccessKeyName=taxi-fare-asa-access-policy;SharedAccessKey=eI7CeODrA/GZwNjPyn9E5PEGcXTLDqmK7C74CsU4tno=;EntityPath=taxi-fare";
+            var rideDataFilePath = @"C:\projects\github\reference-architectures\data\streaming_asa\DataFile";
             var numberOfMillisecondsToRun = (int.TryParse(Environment.GetEnvironmentVariable("SECONDS_TO_RUN"), out int outputSecondToRun) ? outputSecondToRun : 0) * 1000;
             var numberOfMillisecondsToLead = (int.TryParse(Environment.GetEnvironmentVariable("MINUTES_TO_LEAD"), out int outputMinutesToLead) ? outputMinutesToLead : 0) * 60000;
             var pushRideDataFirst = bool.TryParse(Environment.GetEnvironmentVariable("PUSH_RIDE_DATA_FIRST"), out Boolean outputPushRideDataFirst) ? outputPushRideDataFirst : false;

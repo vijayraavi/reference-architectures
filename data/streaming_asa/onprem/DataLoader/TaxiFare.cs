@@ -42,7 +42,7 @@ namespace Taxi
             }
 
             string[] tokens = line.Split(',');
-            if (tokens.Length != 11)
+            if (tokens.Length != 12)
             {
                 throw new ArgumentException($"Invalid record: {line}");
             }
