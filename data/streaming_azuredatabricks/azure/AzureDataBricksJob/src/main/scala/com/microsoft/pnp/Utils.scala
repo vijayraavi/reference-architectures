@@ -4,6 +4,7 @@ import java.sql.Timestamp
 import java.time.{ZoneId, ZonedDateTime}
 import java.util.HashMap
 
+import com.google.gson.{JsonElement, JsonParser}
 import org.apache.spark.sql.Row
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
@@ -13,6 +14,7 @@ import scala.util.Try
 
 object Utils {
 
+  val parser = new JsonParser()
   implicit val formats = DefaultFormats
   private val sourceEnqueTimeFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS")
 
@@ -34,5 +36,9 @@ object Utils {
     bizmetrics.put("DateValue",date.toString())
 
     bizmetrics
+  }
+
+  def validateJsonString(jsonString: String): JsonElement = {
+    parser.parse(jsonString)
   }
 }

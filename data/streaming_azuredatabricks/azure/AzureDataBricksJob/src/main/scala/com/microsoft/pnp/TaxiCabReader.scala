@@ -1,300 +1,187 @@
 package com.microsoft.pnp
 
-
 import java.sql.Timestamp
 
 import com.microsoft.pnp.spark.StreamingMetricsListener
 import org.apache.spark.SparkEnv
-import org.apache.spark.eventhubs.{ConnectionStringBuilder, EventHubsConf, EventPosition}
 import org.apache.spark.metrics.source.{AppAccumulators, AppMetrics}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.{count, lit}
 import org.apache.spark.sql.streaming.{GroupState, GroupStateTimeout, Trigger}
-
+import org.apache.spark.sql.Row
 import scala.util.{Failure, Success, Try}
+import org.apache.spark.sql.functions._
+import com.google.gson.{Gson, JsonElement, JsonParser}
+
+case class InputRow(medallion:String, hackLicense:String, vendorId:String, pickupTime:String, rateCode:String, storeAndForwardFlag:String, dropoffTime:String, passengerCount:String, tripTimeInSeconds:String, tripDistanceInMiles:String, pickupLon:String, pickupLat:String, dropoffLon:String, dropoffLat:String, paymentType:String, fareAmount:String, surcharge:String, mTATax:String, tipAmount:String, tollsAmount:String, totalAmount:String) extends Serializable
+
+case class NeighborhoodState(neighborhoodName:String, var avgFarePerRide:Double, var ridesCount:Double) extends Serializable
+
+case class TaxiRide(rateCode: Int, storeAndForwardFlag: String, dropoffTime: String, passengerCount: Int, tripTimeInSeconds: Double,
+                    tripDistanceInMiles: Double, pickupLon: Double, pickupLat: Double, dropoffLon: Double, dropoffLat: Double,
+                    medallion: Long, hackLicense: Long, vendorId: String, pickupTime: String) extends Serializable
+
+case class TaxiFare(medallion: Long, hackLicense: Long, vendorId: String, pickupTime: String, paymentType: String,
+                    fareAmount: Double, surcharge: Double, mTATax: Double, tipAmount: Double, tollsAmount: Double, totalAmount: Double) extends Serializable
+
 
 object TaxiCabReader {
 
-  val taxiRideEventHubName = "taxi-ride"
-  val taxiFareEventHubName = "taxi-fare"
-  val sparkStreamFormatForEventHub = "eventhubs"
-  val waterMarkTimeDuriation = "15 minutes"
-  val maxThresholdBetweenStreams = "50 seconds"
-  val errorRecordsEventHubName = "taxi-ride" //TODO get one defined. time sbeing using an existing one
-
   def main(args: Array[String]) {
 
+    /*    if (args.length < 2) {
+          throw new Exception("Invalid Arguments")
+        }
 
-    Try(parseArgs(args)) match {
-      case Success(arguments) => {
+        val rideEventHubConnectionString = args(0)
+        val fareEventHubConnectionString = args(1)*/
 
-        val spark = SparkSession.builder().config("spark.master", "local[10]").getOrCreate()
+    val rideEventHubConnectionString = "Endpoint=sb://rs-eh-ns.servicebus.windows.net/;SharedAccessKeyName=taxi-ride-asa-access-policy;SharedAccessKey=/GjrSZc1uXKlwnrbXikYUEwcC++zE9nGJm4cRmvUlvw=;EntityPath=taxi-ride"
+    val fareEventHubConnectionString = "Endpoint=sb://rs-eh-ns.servicebus.windows.net/;SharedAccessKeyName=taxi-fare-asa-access-policy;SharedAccessKey=eI7CeODrA/GZwNjPyn9E5PEGcXTLDqmK7C74CsU4tno=;EntityPath=taxi-fare"
 
-        @transient val appMetrics = new AppMetrics(spark.sparkContext)
-        appMetrics.registerGauge("metricsregistrytest.processed",
-          AppAccumulators.getProcessedInputCountInstance(spark.sparkContext))
-        SparkEnv.get.metricsSystem.registerSource(appMetrics)
+    val spark = SparkSession.builder().config("spark.master", "local[10]").getOrCreate()
 
-        import spark.implicits._
+    @transient val appMetrics = new AppMetrics(spark.sparkContext)
+    appMetrics.registerGauge("metricsregistrytest.processed",
+      AppAccumulators.getProcessedInputCountInstance(spark.sparkContext))
+    SparkEnv.get.metricsSystem.registerSource(appMetrics)
 
+    import spark.implicits._
 
-        spark.streams.addListener(new StreamingMetricsListener())
-        // Taxi ride infra setup -
+    val csvFareToJson = (farePayload: String) => {
+      val csvString = farePayload.split("\r?\n")(1)
+      val tokens = csvString.split(",").map(x => x.trim)
 
-        val rideConnectionString = ConnectionStringBuilder(arguments.rideEventHubConnectionString)
-          .setEventHubName(taxiRideEventHubName)
-          .build
+      val splitPickUpTimes = tokens(3).split(" ").map(x => x.trim)
 
-        val rideEventHubConf = EventHubsConf(rideConnectionString)
-          .setStartingPosition(EventPosition.fromStartOfStream)
+      val medallion = tokens(0).toLong
+      val hackLicense = tokens(1).toLong
+      val vendorId = tokens(2)
+      val pickupTime = splitPickUpTimes(0) + "T" + splitPickUpTimes(1) + "+00:00"
+      val paymentType = tokens(4)
+      val fareAmount = tokens(5).toDouble
+      val surcharge = tokens(6).toDouble
+      val mTATax = tokens(7).toDouble
+      val tipAmount = tokens(8).toDouble
+      val tollsAmount = tokens(9).toDouble
+      val totalAmount = tokens(10).toDouble
 
-        //Taxi fare infra setup -
-
-        val fareConnectionString = ConnectionStringBuilder(arguments.fareEventHubConnectionString)
-          .setEventHubName(taxiFareEventHubName)
-          .build
-
-        val fareEventHubConf = EventHubsConf(fareConnectionString)
-          .setStartingPosition(EventPosition.fromStartOfStream)
-
-        //Error records infra setup  -
-
-        val errorRecordsEventHubConnectionString = ConnectionStringBuilder(arguments.errorRecordsEventHubConnectionString)
-          .setEventHubName(errorRecordsEventHubName)
-          .build
-
-        val errorEventHubConf = EventHubsConf(errorRecordsEventHubConnectionString)
-          .setStartingPosition(EventPosition.fromEndOfStream)
-
-
-        //Taxi ride read stream and extract taxi ride object -
-        val rideDataFrame = spark.readStream
-          .format(sparkStreamFormatForEventHub)
-          .options(rideEventHubConf.toMap)
-          .load
-
-
-        val rides = rideDataFrame
-          .selectExpr("cast(body as string) AS rideContent",
-            "enqueuedTime As recordIngestedTime")
-
-
-        val taxiRideStream = rides.map(eventHubRow => TaxiRideMapper.mapRowToEncrichedTaxiRideRecord(eventHubRow))
-          .withWatermark("enqueueTime", waterMarkTimeDuriation)
-          .as[EnrichedTaxiDataRecord]
-
-
-        // Taxi fare read stream and extract fare object -
-        val fareDataFrame = spark.readStream
-          .format(sparkStreamFormatForEventHub)
-          .options(fareEventHubConf.toMap)
-          .load
-
-        val fares = fareDataFrame
-          .selectExpr("cast (body as string) AS fareContent",
-            "enqueuedTime As recordIngestedTime")
-
-
-        val taxiFareStream = fares.map(eventHubRow => TaxiFareMapper.mapRowToEncrichedTaxiFareRecord(eventHubRow))
-          .withWatermark("enqueueTime", waterMarkTimeDuriation)
-          .as[EnrichedTaxiDataRecord]
-
-
-        val mergedTaxiDataRecords = taxiFareStream.union(taxiRideStream)
-
-        val invalidTaxiDataRecords = mergedTaxiDataRecords.filter(record => !record.isValidRecord)
-
-
-        // option 1
-        // we push the # of invalid taxi records to ALA
-        // as a business metrics
-        // using a business metris writer for high scala and performance
-        val businessMetricsWriter = new BusinessMetricsWriter()
-        invalidTaxiDataRecords.toDF()
-          .groupBy("isValidRecord")
-          .agg(
-            count(lit(1)).alias("CountInvalidRecords")
-          )
-          .writeStream
-          .foreach(businessMetricsWriter)
-          .outputMode("append")
-          .start()
-          .awaitTermination()
-        //option 2
-        // we use the accumulator to pile up the counts of
-        // invalid records
-        // metrics registry will log to ALA
-        val processedInputCount = AppAccumulators.getProcessedInputCountInstance(spark.sparkContext)
-        processedInputCount.add(invalidTaxiDataRecords.count())
-
-        val validTaxiDataRecords = mergedTaxiDataRecords.filter(record => record.isValidRecord)
-
-
-        val groupedEnrichedTaxiDataRecords = validTaxiDataRecords.groupByKey(_.taxiDataRecordKey)
-          .mapGroupsWithState(GroupStateTimeout.ProcessingTimeTimeout())(updateAcrossTaxiDataPerKeyRecords)
-          .filter(groupedRecordWithState => groupedRecordWithState.expired)
-
-
-        invalidTaxiDataRecords
-          .writeStream
-          .format(sparkStreamFormatForEventHub)
-          .outputMode("update")
-          .options(errorEventHubConf.toMap)
-          .trigger(Trigger.ProcessingTime("25 seconds"))
-          .option("checkpointLocation", "./checkpoint/") // TODO paramterize checkpoint location and make it point to azure blob
-          .start()
-
-
-//        val neibhourhoods = groupedEnrichedTaxiDataRecords.filter(x => x.taxiRide != null).map(x => x.taxiRide.neigbhourHood)
-
-
-        groupedEnrichedTaxiDataRecords
-          .writeStream
-          .outputMode("update")
-          .format("console")
-          .start()
-          .awaitTermination()
-
-        spark.stop
-      }
-
-      case Failure(exception) => println(exception.getLocalizedMessage)
+      TaxiFare(medallion, hackLicense, vendorId, pickupTime, paymentType
+        , fareAmount, surcharge, mTATax, tipAmount, tollsAmount, totalAmount)
     }
 
+    val neighborhoodFinder = (lat: Double, lon: Double ) => {
+      NeighborhoodFinder.getNeighborhood(lon, lat).get()
+    }
+
+    val to_neighborhood = spark.udf.register("neighborhoodFinder", neighborhoodFinder)
+    val myUDF = spark.udf.register("csvFareToJson", csvFareToJson)
+
+
+    spark.streams.addListener(new StreamingMetricsListener())
+
+    val rideEvents = EventHubStream.ExecuteDataFrame(spark,
+      EventHubStream.BuildConnectionString(rideEventHubConnectionString, TaxiRideEventHubName))
+
+    val fareEvents = EventHubStream.ExecuteDataFrame(spark,
+      EventHubStream.BuildConnectionString(fareEventHubConnectionString, TaxiFareEventHubName))
+
+    val rides = rideEvents
+      .selectExpr("CAST(body AS STRING) AS ridePayload", "enqueuedTime As rideTime")
+      .filter(r => isValidRideEvent(r))
+      .select($"rideTime", from_json($"ridePayload", RideSchema) as "rides")
+      .select($"rideTime", $"rides.*", to_neighborhood($"rides.pickupLon", $"rides.pickupLat"))
+      .withWatermark("rideTime", "1 seconds")
+
+
+    val fares = fareEvents
+      .selectExpr("CAST(body AS STRING) AS farePayload", "enqueuedTime As fareTime")
+      .filter(r => isValidFareEvent(r))
+      .withColumn("fares", myUDF($"farePayload"))
+      .select($"fareTime", $"fares.*")
+      .withWatermark("fareTime", "1 seconds")
+
+    val mergedTaxiTrip = rides.join(fares, Seq("medallion", "hackLicense", "vendorId", "pickupTime"))
+
+    val maxAvgFarePerNeighborhood =  mergedTaxiTrip.selectExpr("medallion", "hackLicense", "vendorId", "pickupTime", "rateCode", "storeAndForwardFlag", "dropoffTime", "passengerCount", "tripTimeInSeconds", "tripDistanceInMiles", "pickupLon", "pickupLat", "dropoffLon", "dropoffLat", "paymentType", "fareAmount", "surcharge", "mTATax", "tipAmount", "tollsAmount", "totalAmount")
+      .as[InputRow]
+      .groupByKey(_.passengerCount)
+      .mapGroupsWithState(GroupStateTimeout.ProcessingTimeTimeout)(updateForEvents)
+      .writeStream
+      .queryName("events_per_window")
+      .format("memory")
+      .outputMode("update")
+      .start()
 
   }
 
+  def parseDouble(s: String): Option[Double] = Try { s.toDouble }.toOption
 
-  case class TaxiDataPerKeyState(
-                                  var taxiDataRecordKey: String,
-                                  var startTaxiDataRecordsEnqueueTime: Timestamp,
-                                  var endTaxiDataRecordsEnqueueTime: Timestamp,
-                                  var numOfTaxiDataRecords: Int,
-                                  var taxiRide: TaxiRide,
-                                  var taxiFare: TaxiFare,
-                                  var expired: Boolean)
-
-
-  case class Arguments(
-                        rideEventHubConnectionString: String,
-                        fareEventHubConnectionString: String,
-                        errorRecordsEventHubConnectionString: String
-                      )
-
-
-  def parseArgs(args: Array[String]): Arguments = {
-
-
-    if (args.length < 3) {
-      throw new Exception("please provide valid arguments for this program")
+  def updateNeighborhoodStateWithEvent(state:NeighborhoodState, input:InputRow):NeighborhoodState = {
+    if (parseDouble(input.fareAmount) == None) {
+      return state
     }
 
-    Arguments(
-      args(0),
-      args(1),
-      args(2)
-    )
+    val fare = parseDouble(input.fareAmount).get
 
+    state.avgFarePerRide = ((state.avgFarePerRide * state.ridesCount) + fare)/ (state.ridesCount + 1)
+    state.ridesCount += 1
+
+    state
   }
 
+  def updateForEvents(neighborhoodName:String,
+                      inputs: Iterator[InputRow],
+                      oldState: GroupState[NeighborhoodState]):NeighborhoodState = {
 
-  def updateTaxiDataPerKeyStateWithTaxiDataPerKeyRecord(state: TaxiDataPerKeyState, input: EnrichedTaxiDataRecord): TaxiDataPerKeyState = {
+    var state:NeighborhoodState = if (oldState.exists) oldState.get else NeighborhoodState(neighborhoodName, 0, 0)
 
-    var isDuplicateRecord = false
-    if (state.taxiDataRecordKey == input.taxiDataRecordKey) {
-
-      input.recordType match {
-        case "taxiRide" =>
-          if (state.taxiRide != null) {
-            isDuplicateRecord = true
-          } else {
-            state.taxiRide = input.taxiRide
-          }
-
-        case "taxiFare" =>
-          if (state.taxiFare != null) {
-            isDuplicateRecord = true
-          }
-          else {
-            state.taxiFare = input.taxiFare
-          }
-      }
-
-      if (!isDuplicateRecord) {
-        if (input.enqueueTime.after(state.endTaxiDataRecordsEnqueueTime)) {
-          state.endTaxiDataRecordsEnqueueTime = input.enqueueTime
-        }
-
-        if (input.enqueueTime.before(state.startTaxiDataRecordsEnqueueTime)) {
-          state.startTaxiDataRecordsEnqueueTime = input.enqueueTime
-        }
-
-        state.numOfTaxiDataRecords += 1
-        state.expired = false
-      }
-    }
-    else {
-
-      if (input.enqueueTime.after(state.endTaxiDataRecordsEnqueueTime)) {
-        state.startTaxiDataRecordsEnqueueTime = input.enqueueTime
-        state.endTaxiDataRecordsEnqueueTime = input.enqueueTime
-        state.taxiDataRecordKey = input.taxiDataRecordKey
-        input.recordType match {
-          case "taxiRide" => state.taxiRide = input.taxiRide
-          case "taxiFare" => state.taxiFare = input.taxiFare
-        }
-        state.numOfTaxiDataRecords = 1
-        state.expired = false
-      }
+    for (input <- inputs) {
+      state = updateNeighborhoodStateWithEvent(state, input)
+      oldState.update(state)
     }
 
     state
-
   }
 
+  def isValidRideEvent(eventHubRow: Row) : Boolean = {
+    val gson = new Gson()
 
-  def updateAcrossTaxiDataPerKeyRecords(taxiDataRecordKey: String, inputs: Iterator[EnrichedTaxiDataRecord],
-                                        oldState: GroupState[TaxiDataPerKeyState]): TaxiDataPerKeyState = {
-
-
-    if (oldState.hasTimedOut) {
-
-      val currentState = oldState.get
-      val newState = TaxiDataPerKeyState(
-        currentState.taxiDataRecordKey,
-        currentState.startTaxiDataRecordsEnqueueTime,
-        currentState.endTaxiDataRecordsEnqueueTime,
-        currentState.numOfTaxiDataRecords,
-        currentState.taxiRide,
-        currentState.taxiFare,
-        !currentState.expired
-      )
-      oldState.remove()
-      newState
+    Try(gson.fromJson(eventHubRow(0).toString, classOf[TaxiRide])) match {
+      case Success(r) => true
+      case Failure(exception) => false
     }
-    else {
+  }
 
-      var state: TaxiDataPerKeyState = if (oldState.exists) oldState.get
-      else TaxiDataPerKeyState(
-        "",
-        new java.sql.Timestamp(6284160000000L),
-        new java.sql.Timestamp(6284160L),
-        0,
-        null,
-        null,
-        expired = false
-      )
+  def isValidFareEvent(eventHubRow: Row) : Boolean = {
+    val farePayload = eventHubRow(0).toString
+    try {
+      val csvString = farePayload.split("\r?\n")(1)
+      val tokens = csvString.split(",").map(x => x.trim)
 
-      for (input <- inputs) {
-
-        state = updateTaxiDataPerKeyStateWithTaxiDataPerKeyRecord(state, input)
-        oldState.update(state)
+      if (tokens.length != 11) {
+        throw new Exception("invalid taxi fare csv")
       }
+      val splitPickUpTimes = tokens(3).split(" ").map(x => x.trim)
 
-      oldState.setTimeoutDuration(maxThresholdBetweenStreams)
-      state
+      val medallion = tokens(0).toLong
+      val hackLicense = tokens(1).toLong
+      val vendorId = tokens(2)
+      val pickupTime = splitPickUpTimes(0) + "T" + splitPickUpTimes(1) + "+00:00"
+      val paymentType = tokens(4)
+      val fareAmount = tokens(5).toDouble
+      val surcharge = tokens(6).toDouble
+      val mTATax = tokens(7).toDouble
+      val tipAmount = tokens(8).toDouble
+      val tollsAmount = tokens(9).toDouble
+      val totalAmount = tokens(10).toDouble
+
+      val fare = TaxiFare(medallion, hackLicense, vendorId, pickupTime, paymentType
+        , fareAmount, surcharge, mTATax, tipAmount, tollsAmount, totalAmount)
     }
+    catch {
+      case ex: Exception => false
+    }
+
+    true
   }
-
-
 }
