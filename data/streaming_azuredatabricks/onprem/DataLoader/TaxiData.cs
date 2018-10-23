@@ -41,7 +41,9 @@ namespace Taxi
         {
             if (dataFormat == DataFormat.Csv)
             {
-                return $"{CsvHeader}\r\n{CsvString}";
+                // removing the header. At the spark end , 
+                // the schema for csv string fields are made aware upfront.
+                return $"{CsvString}";
             }
             else if (dataFormat == DataFormat.Json)
             {
