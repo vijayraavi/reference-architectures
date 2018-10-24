@@ -1,6 +1,5 @@
 package com.microsoft
 
-import com.sun.org.apache.xalan.internal.xsltc.compiler.util.IntType
 import org.apache.spark.sql.types._
 
 package object pnp {
@@ -15,7 +14,7 @@ package object pnp {
   val RideSchema = new StructType()
     .add("rateCode", IntegerType)
     .add("storeAndForwardFlag", StringType)
-    .add("dropoffTime",StringType)
+    .add("dropoffTime", TimestampType)
     .add("passengerCount", IntegerType)
     .add("tripTimeInSeconds", DoubleType)
     .add("tripDistanceInMiles", DoubleType)
@@ -26,17 +25,19 @@ package object pnp {
     .add("medallion", LongType)
     .add("hackLicense", LongType)
     .add("vendorId", StringType)
-    .add("pickupTime", StringType)
+    .add("pickupTime", TimestampType)
+    .add("errorMessage", StringType)
+    .add("messageData", StringType)
 
   val FareSchema = new StructType()
     .add("medallion", LongType)
     .add("hackLicense", LongType)
     .add("vendorId",StringType)
-    .add("pickupTime", StringType)
+    .add("pickupTimeString", StringType)
     .add("paymentType", StringType)
     .add("fareAmount", DoubleType)
     .add("surcharge", DoubleType)
-    .add("mTATax", DoubleType)
+    .add("mtaTax", DoubleType)
     .add("tipAmount", DoubleType)
     .add("tollsAmount", DoubleType)
     .add("totalAmount", DoubleType)
