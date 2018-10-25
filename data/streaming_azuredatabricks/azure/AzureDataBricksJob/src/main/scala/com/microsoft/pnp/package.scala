@@ -1,15 +1,15 @@
 package com.microsoft
 
 import org.apache.spark.sql.types._
+import com.databricks.dbutils_v1.DBUtilsHolder.dbutils.secrets
 
 package object pnp {
 
-  val TaxiRideEventHubName = "taxi-ride"
-  val TaxiFareEventHubName = "taxi-fare"
-  val SparkStreamFormat = "eventhubs"
-  val WaterMarkTimeDuration = "15 minutes"
   val MaxThresholdBetweenStreams = "50 seconds"
-  val ErrorRecordsEventHubName = "taxi-ride" // Replace with error eventhub
+
+  def getSecret(secretScope: String, secretName: String): String = {
+    secrets.get(secretScope, secretName)
+  }
 
   val RideSchema = new StructType()
     .add("rateCode", IntegerType)
@@ -41,7 +41,5 @@ package object pnp {
     .add("tipAmount", DoubleType)
     .add("tollsAmount", DoubleType)
     .add("totalAmount", DoubleType)
-
-  @transient lazy val NeighborhoodFinder = GeoFinder.createGeoFinder(NeighborhoodEnvReader.getNeighborhoodFileURL())
 }
 
