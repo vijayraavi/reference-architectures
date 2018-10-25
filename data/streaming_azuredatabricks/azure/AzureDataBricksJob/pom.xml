@@ -47,9 +47,30 @@
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
             <version>9.3.20.v20170531</version>
-            <scope>provided</scope>
+            <!--<scope>provided</scope>-->
         </dependency>
-
+        <dependency>
+            <groupId>com.datastax.spark</groupId>
+            <artifactId>spark-cassandra-connector_2.11</artifactId>
+            <version>2.3.0</version>
+            <!--<scope>provided</scope>-->
+        </dependency>
+        <dependency>
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-core</artifactId>
+            <version>3.6.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.1.17.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.azure.cosmosdb</groupId>
+            <artifactId>azure-cosmos-cassandra-spark-helper</artifactId>
+            <version>1.0.0</version>
+            <!--<scope>provided</scope>-->
+        </dependency>
     </dependencies>
     <repositories>
         <repository>
@@ -75,7 +96,7 @@
                 <configuration>
                     <!--<debugForkedProcess>true</debugForkedProcess>-->
                     <!--<environmentVariables>-->
-                        <!--<NEIGHBORHOOD_FILE_PATH>jar:file:/C:/Source/mspnp/reference-architectures/data/streaming_azuredatabricks/azure/AzureDataBricksJob/ZillowNeighborhoods-NY.zip!/ZillowNeighborhoods-NY.shp</NEIGHBORHOOD_FILE_PATH>-->
+                    <!--<NEIGHBORHOOD_FILE_PATH>jar:file:/C:/Source/mspnp/reference-architectures/data/streaming_azuredatabricks/azure/AzureDataBricksJob/ZillowNeighborhoods-NY.zip!/ZillowNeighborhoods-NY.shp</NEIGHBORHOOD_FILE_PATH>-->
                     <!--</environmentVariables>-->
                 </configuration>
             </plugin>
