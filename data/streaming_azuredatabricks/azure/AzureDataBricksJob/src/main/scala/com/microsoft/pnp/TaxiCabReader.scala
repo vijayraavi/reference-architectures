@@ -36,25 +36,20 @@ case class InputRow(
                      tipAmount: Double,
                      tollsAmount: Double,
                      totalAmount: Double,
-                     neighborhood: String) extends Serializable
+                     pickupNeighborhood: String,
+                     dropoffNeighborhood: String) extends Serializable
 
 case class NeighborhoodState(neighborhoodName:String, var avgFarePerRide:Double, var ridesCount:Double) extends Serializable
-
-case class TaxiFare(medallion: Long, hackLicense: Long, vendorId: String, pickupTime: String, paymentType: String,
-                    fareAmount: Double, surcharge: Double, mTATax: Double, tipAmount: Double, tollsAmount: Double, totalAmount: Double) extends Serializable
-
 
 object TaxiCabReader {
   private def withExpr(expr: Expression): Column = new Column(expr)
 
   def main(args: Array[String]) {
-
-    if (args.length < 2) {
-      throw new Exception("Invalid Arguments")
-    }
-
-    val rideEventHubConnectionString = args(0)
-    val fareEventHubConnectionString = args(1)
+    val conf = new JobConfiguration(args)
+    val rideEventHubConnectionString = getSecret(
+      conf.secretScope(), conf.taxiRideEventHubSecretName())
+    val fareEventHubConnectionString = getSecret(
+      conf.secretScope(), conf.taxiFareEventHubSecretName())
 
     // DBFS root for our job
     val dbfsRoot = "dbfs:/azure-databricks-job"
@@ -62,27 +57,28 @@ object TaxiCabReader {
     val malformedRoot = s"${dbfsRoot}/malformed"
 
     val spark = SparkSession.builder().config("spark.master", "local[10]").getOrCreate()
+    import spark.implicits._
 
     @transient val appMetrics = new AppMetrics(spark.sparkContext)
     appMetrics.registerGauge("metricsregistrytest.processed",
       AppAccumulators.getProcessedInputCountInstance(spark.sparkContext))
     SparkEnv.get.metricsSystem.registerSource(appMetrics)
 
-    import spark.implicits._
-
+    @transient lazy val NeighborhoodFinder = GeoFinder.createGeoFinder(
+      conf.neighborhoodFileURL())
     val neighborhoodFinder = (lon: Double, lat: Double ) => {
       NeighborhoodFinder.getNeighborhood(lon, lat).get()
     }
+    val to_neighborhood = spark.udf.register("neighborhoodFinder", neighborhoodFinder)
 
     def from_csv(e: Column, schema: StructType, options: Map[String, String]): Column = withExpr {
       CsvToStructs(schema, options, e.expr)
     }
-    val to_neighborhood = spark.udf.register("neighborhoodFinder", neighborhoodFinder)
 
     spark.streams.addListener(new StreamingMetricsListener())
 
     val rideEventHubOptions = EventHubsConf(rideEventHubConnectionString)
-      .setConsumerGroup("taxi-ride-asa-consumer-group")
+      .setConsumerGroup(conf.taxiRideConsumerGroup())
       .setStartingPosition(EventPosition.fromStartOfStream)
     val rideEvents = spark.readStream
       .format("eventhubs")
@@ -90,7 +86,7 @@ object TaxiCabReader {
       .load
 
     val fareEventHubOptions = EventHubsConf(fareEventHubConnectionString)
-      .setConsumerGroup("taxi-fare-asa-consumer-group")
+      .setConsumerGroup(conf.taxiFareConsumerGroup())
       .setStartingPosition(EventPosition.fromStartOfStream)
     val fareEvents = spark.readStream
       .format("eventhubs")
@@ -132,9 +128,11 @@ object TaxiCabReader {
           $"rideTime",
           $"ride.*",
           to_neighborhood($"ride.pickupLon", $"ride.pickupLat")
-            .as("neighborhood")
+            .as("pickupNeighborhood"),
+          to_neighborhood($"ride.dropoffLon", $"ride.dropoffLat")
+            .as("dropoffNeighborhood")
         )
-      .withWatermark("pickupTime", "3 minutes")
+        .withWatermark("pickupTime", conf.taxiRideWatermarkInterval())
 
     val csvOptions = Map("header" -> "true", "multiLine" -> "true")
     val transformedFares = fareEvents
@@ -183,15 +181,19 @@ object TaxiCabReader {
             $"fare.*",
             $"pickupTime"
           )
-        .withWatermark("pickupTime", "3 minutes")
+          .withWatermark("pickupTime", conf.taxiFareWatermarkInterval())
 
     val mergedTaxiTrip = rides.join(fares, Seq("medallion", "hackLicense", "vendorId", "pickupTime"))
 
-    val maxAvgFarePerNeighborhood =  mergedTaxiTrip.selectExpr("medallion", "hackLicense", "vendorId", "pickupTime", "rateCode", "storeAndForwardFlag", "dropoffTime", "passengerCount", "tripTimeInSeconds", "tripDistanceInMiles", "pickupLon", "pickupLat", "dropoffLon", "dropoffLat", "paymentType", "fareAmount", "surcharge", "mtaTax", "tipAmount", "tollsAmount", "totalAmount", "neighborhood")
+    val maxAvgFarePerNeighborhood =  mergedTaxiTrip.selectExpr("medallion", "hackLicense", "vendorId", "pickupTime", "rateCode", "storeAndForwardFlag", "dropoffTime", "passengerCount", "tripTimeInSeconds", "tripDistanceInMiles", "pickupLon", "pickupLat", "dropoffLon", "dropoffLat", "paymentType", "fareAmount", "surcharge", "mtaTax", "tipAmount", "tollsAmount", "totalAmount", "pickupNeighborhood", "dropoffNeighborhood")
       .as[InputRow]
-      .groupBy(window($"pickupTime", "1 minute"), $"neighborhood")
-      .agg(count("*").as("rideCount"))
-      .select($"window.start", $"window.end", $"neighborhood", $"rideCount")
+      .groupBy(window($"pickupTime", conf.windowInterval()), $"pickupNeighborhood")
+      .agg(
+        count("*").as("rideCount"),
+        sum($"fareAmount").as("totalFareAmount"),
+        sum($"tipAmount").as("totalTipAmount")
+      )
+      .select($"window.start", $"window.end", $"pickupNeighborhood", $"rideCount", $"totalFareAmount", $"totalTipAmount")
 //      .groupByKey(_.neighborhood)
 //      .flatMapGroupsWithState(OutputMode.Append, GroupStateTimeout.NoTimeout)(updateForEvents)
       .writeStream
