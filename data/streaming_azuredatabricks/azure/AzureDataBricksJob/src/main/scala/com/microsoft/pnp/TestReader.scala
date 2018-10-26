@@ -37,6 +37,7 @@ object TestReader {
     rides.printSchema()
     val mockObjects = rides.map(row => Base64Converter(row)).toDF()
 
+
 //    mockObjects.writeStream
 //      .format("console")
 //      .outputMode("update")
