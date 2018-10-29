@@ -24,6 +24,12 @@ class JobConfiguration(arguments: Seq[String]) extends ScallopConf(arguments) wi
   val taxiRideEventHubSecretName = opt[String](default = Some("taxi-ride"))
   val taxiFareEventHubSecretName = opt[String](default = Some("taxi-fare"))
 
+  val cassandraConnectionHostSecretName = opt[String](default = Some("cassandra-host"))
+  val cassandraUserSecretName = opt[String](default = Some("cassandra-username"))
+  val cassandraPasswordSecretName = opt[String](default = Some("cassandra-password"))
+
+
+
   verify()
 
   private def isValidInterval(interval: String): Boolean = {
