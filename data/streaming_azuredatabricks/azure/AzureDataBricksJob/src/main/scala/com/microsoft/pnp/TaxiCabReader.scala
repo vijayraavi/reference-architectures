@@ -60,7 +60,7 @@ object TaxiCabReader {
     import spark.implicits._
 
     @transient val appMetrics = new AppMetrics(spark.sparkContext)
-    appMetrics.registerGauge("metricsregistrytest.processed",
+    appMetrics.registerGauge("metrics.invalidrecords",
       AppAccumulators.getProcessedInputCountInstance(spark.sparkContext))
     SparkEnv.get.metricsSystem.registerSource(appMetrics)
 
@@ -110,6 +110,16 @@ object TaxiCabReader {
           .otherwise(lit(null))
         )
       })
+
+    // add rides invalid records as an accumulator
+    // it is processed by metrics registry
+    // it is registered in SparkMetric_CL
+
+    var accInvalidRecords = AppAccumulators.getProcessedInputCountInstance(spark.sparkContext)
+    accInvalidRecords.add(transformedRides
+      .filter($"errorMessage".isNotNull)
+      .select($"messageData")
+      .count())
 
       val invalidRides = transformedRides
           .filter($"errorMessage".isNotNull)
@@ -163,15 +173,31 @@ object TaxiCabReader {
         )
       })
 
-        val invalidFares = transformedFares
-            .filter($"errorMessage".isNotNull)
-          .select($"messageData")
-          .writeStream
-          .outputMode(OutputMode.Append)
-          .queryName("invalid_fare_records")
-          .format("csv")
-          .option("path", s"${malformedRoot}/fares")
-          .option("checkpointLocation", s"${checkpointRoot}/fares")
+    // add fare invalid records as an accumulator. it is
+    // accumulated with ride invalid records
+    // it is processed by metrics registry
+    // it is registered in SparkMetric_CL
+
+    accInvalidRecords = AppAccumulators.getProcessedInputCountInstance(spark.sparkContext)
+    accInvalidRecords.add(transformedFares
+      .filter($"errorMessage".isNotNull)
+      .select($"messageData")
+      .count())
+
+
+    val invalidFares = transformedFares
+      .filter($"errorMessage".isNotNull)
+      .select($"messageData")
+      .writeStream
+      .outputMode(OutputMode.Append)
+      .queryName("invalid_fare_records")
+      .format("csv")
+      .option("path", s"${malformedRoot}/fares")
+      .option("checkpointLocation", s"${checkpointRoot}/fares")
+
+
+
+
 
 
         val fares = transformedFares
@@ -185,7 +211,7 @@ object TaxiCabReader {
 
     val mergedTaxiTrip = rides.join(fares, Seq("medallion", "hackLicense", "vendorId", "pickupTime"))
 
-    val maxAvgFarePerNeighborhood =  mergedTaxiTrip.selectExpr("medallion", "hackLicense", "vendorId", "pickupTime", "rateCode", "storeAndForwardFlag", "dropoffTime", "passengerCount", "tripTimeInSeconds", "tripDistanceInMiles", "pickupLon", "pickupLat", "dropoffLon", "dropoffLat", "paymentType", "fareAmount", "surcharge", "mtaTax", "tipAmount", "tollsAmount", "totalAmount", "pickupNeighborhood", "dropoffNeighborhood")
+    val maxAvgFarePerNeighborhoodDf =  mergedTaxiTrip.selectExpr("medallion", "hackLicense", "vendorId", "pickupTime", "rateCode", "storeAndForwardFlag", "dropoffTime", "passengerCount", "tripTimeInSeconds", "tripDistanceInMiles", "pickupLon", "pickupLat", "dropoffLon", "dropoffLat", "paymentType", "fareAmount", "surcharge", "mtaTax", "tipAmount", "tollsAmount", "totalAmount", "pickupNeighborhood", "dropoffNeighborhood")
       .as[InputRow]
       .groupBy(window($"pickupTime", conf.windowInterval()), $"pickupNeighborhood")
       .agg(
@@ -194,13 +220,25 @@ object TaxiCabReader {
         sum($"tipAmount").as("totalTipAmount")
       )
       .select($"window.start", $"window.end", $"pickupNeighborhood", $"rideCount", $"totalFareAmount", $"totalTipAmount")
-//      .groupByKey(_.neighborhood)
-//      .flatMapGroupsWithState(OutputMode.Append, GroupStateTimeout.NoTimeout)(updateForEvents)
+
+    maxAvgFarePerNeighborhoodDf
       .writeStream
       .outputMode(OutputMode.Append)
       .queryName("events_per_window")
       .format("console")
       .start
+
+    // send telemetry of pickupNeighborhood, ridecount, totalfareAmount and totalTipAmount
+    // as business metrics. log type it is configured in type of log4j.properties
+
+    val businessMetricsWriter = new BusinessMetricsWriter()
+
+    maxAvgFarePerNeighborhoodDf
+      .writeStream
+      .foreach(businessMetricsWriter)
+      .outputMode("append")
+      .start()
+      .awaitTermination()
 
     invalidRides
       .start
