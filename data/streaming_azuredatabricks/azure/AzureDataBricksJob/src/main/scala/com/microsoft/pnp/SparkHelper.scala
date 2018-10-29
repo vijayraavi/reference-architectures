@@ -13,7 +13,7 @@ object SparkHelper {
       .config("spark.cassandra.connection.ssl.enabled", "true")
       .config("spark.cassandra.auth.username", cassandraUserName)
       .config("spark.cassandra.auth.password", cassandraPassword)
-      .config("spark.cassandra.connection.factory", "com.microsoft.azure.cosmosdb.cassandra.CosmosDbConnectionFactory")
+//      .config("spark.cassandra.connection.factory", "com.microsoft.azure.cosmosdb.cassandra.CosmosDbConnectionFactory")
       .config("spark.master", "local[10]")
       .config("spark.cassandra.output.batch.size.rows", "1")
       .config("spark.cassandra.connection.connections_per_executor_max", "2")
