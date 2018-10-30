@@ -3,14 +3,14 @@ package com.microsoft.pnp
 import java.sql.Timestamp
 
 import com.microsoft.pnp.spark.StreamingMetricsListener
-import org.apache.spark.SparkEnv
 import org.apache.spark.eventhubs.{EventHubsConf, EventPosition}
 import org.apache.spark.metrics.source.{AppAccumulators, AppMetrics}
-import org.apache.spark.sql.Column
 import org.apache.spark.sql.catalyst.expressions.{CsvToStructs, Expression}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.streaming.{GroupState, OutputMode}
 import org.apache.spark.sql.types.{StringType, StructType}
+import org.apache.spark.sql.{Column, SparkSession}
+import org.apache.spark.{SparkConf, SparkEnv}
 
 case class InputRow(
                      medallion: Long,
@@ -40,7 +40,10 @@ case class InputRow(
 case class NeighborhoodState(neighborhoodName: String, var avgFarePerRide: Double, var ridesCount: Double) extends Serializable
 
 object TaxiCabReader {
+
+
   private def withExpr(expr: Expression): Column = new Column(expr)
+
 
   def main(args: Array[String]) {
     val conf = new JobConfiguration(args)
@@ -66,10 +69,29 @@ object TaxiCabReader {
     val malformedRoot = s"${dbfsRoot}/malformed"
 
 
-    val spark = SparkHelper
-      .intializeSpark(cassandraEndPoint,
-        cassandraUserName,
-        cassandraPassword)
+    var sparkConf = new SparkConf()
+      .set("spark.cassandra.connection.host", cassandraEndPoint)
+      .set("spark.cassandra.connection.port", "10350")
+      .set("spark.cassandra.connection.ssl.enabled", "true")
+      .set("spark.cassandra.auth.username", cassandraUserName)
+      .set("spark.cassandra.auth.password", cassandraPassword)
+      //      .config("spark.cassandra.connection.factory", "com.microsoft.azure.cosmosdb.cassandra.CosmosDbConnectionFactory")
+      //      .set("spark.master", "local[10]")
+      .set("spark.cassandra.output.batch.size.rows", "1")
+      .set("spark.cassandra.connection.connections_per_executor_max", "2")
+      .set("spark.cassandra.output.concurrent.writes", "5")
+      .set("spark.cassandra.output.batch.grouping.buffer.size", "300")
+      .set("spark.cassandra.connection.keep_alive_ms", "5000")
+      .setMaster("local[10]")
+
+
+    val spark = SparkSession
+      .builder()
+      .config(sparkConf)
+      .getOrCreate()
+
+
+
 
     import spark.implicits._
 
@@ -92,7 +114,7 @@ object TaxiCabReader {
     spark.streams.addListener(new StreamingMetricsListener())
 
     val rideEventHubOptions = EventHubsConf(rideEventHubConnectionString)
-      .setConsumerGroup(conf.taxiRideConsumerGroup())
+      .setConsumerGroup("nithin")
       .setStartingPosition(EventPosition.fromStartOfStream)
     val rideEvents = spark.readStream
       .format("eventhubs")
@@ -100,7 +122,7 @@ object TaxiCabReader {
       .load
 
     val fareEventHubOptions = EventHubsConf(fareEventHubConnectionString)
-      .setConsumerGroup(conf.taxiFareConsumerGroup())
+      .setConsumerGroup("nithin")
       .setStartingPosition(EventPosition.fromStartOfStream)
     val fareEvents = spark.readStream
       .format("eventhubs")
@@ -125,15 +147,15 @@ object TaxiCabReader {
         )
       })
 
-    val invalidRides = transformedRides
-      .filter($"errorMessage".isNotNull)
-      .select($"messageData")
-      .writeStream
-      .outputMode(OutputMode.Append)
-      .queryName("invalid_ride_records")
-      .format("csv")
-      .option("path", s"${malformedRoot}/rides")
-      .option("checkpointLocation", s"${checkpointRoot}/rides")
+    //    val invalidRides = transformedRides
+    //      .filter($"errorMessage".isNotNull)
+    //      .select($"messageData")
+    //      .writeStream
+    //      .outputMode(OutputMode.Append)
+    //      .queryName("invalid_ride_records")
+    //      .format("csv")
+    //      .option("path", s"${malformedRoot}/rides")
+    //      .option("checkpointLocation", s"${checkpointRoot}/rides")
 
 
     val rides = transformedRides
@@ -177,15 +199,15 @@ object TaxiCabReader {
         )
       })
 
-    val invalidFares = transformedFares
-      .filter($"errorMessage".isNotNull)
-      .select($"messageData")
-      .writeStream
-      .outputMode(OutputMode.Append)
-      .queryName("invalid_fare_records")
-      .format("csv")
-      .option("path", s"${malformedRoot}/fares")
-      .option("checkpointLocation", s"${checkpointRoot}/fares")
+    //    val invalidFares = transformedFares
+    //      .filter($"errorMessage".isNotNull)
+    //      .select($"messageData")
+    //      .writeStream
+    //      .outputMode(OutputMode.Append)
+    //      .queryName("invalid_fare_records")
+    //      .format("csv")
+    //      .option("path", s"${malformedRoot}/fares")
+    //      .option("checkpointLocation", s"${checkpointRoot}/fares")
 
 
     val fares = transformedFares
@@ -207,24 +229,26 @@ object TaxiCabReader {
         sum($"fareAmount").as("totalFareAmount"),
         sum($"tipAmount").as("totalTipAmount")
       )
-      .select($"pickupNeighborhood", $"window.start", $"window.end", $"rideCount", $"totalFareAmount", $"totalTipAmount")
+      //      .select($"pickupNeighborhood", $"window.start", $"window.end", $"rideCount", $"totalFareAmount", $"totalTipAmount")
+
+      .select($"window.start", $"pickupNeighborhood")
 
 
     maxAvgFarePerNeighborhood.printSchema()
 
     maxAvgFarePerNeighborhood
       .writeStream
+      .queryName("events_per_window")
       .outputMode(OutputMode.Append)
       .foreach(new CassandraSinkForeach())
-      .queryName("events_per_window")
-//      .format("console")
+      //      .format("console")
       .start
       .awaitTermination()
 
-    invalidRides
-      .start
-    invalidFares
-      .start
+    //    invalidRides
+    //      .start
+    //    invalidFares
+    //      .start
   }
 
   def updateNeighborhoodStateWithEvent(state: NeighborhoodState, input: InputRow): NeighborhoodState = {

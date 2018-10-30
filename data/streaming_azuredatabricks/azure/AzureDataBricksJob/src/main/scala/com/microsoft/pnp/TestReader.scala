@@ -12,9 +12,9 @@ object TestReader {
   def main(args: Array[String]) {
 
 
-    val cassandraEndPoint = "nithintest.cassandra.cosmosdb.azure.com"
-    val cassandraUserName = "nithintest"
-    val cassandraPassword = "AZA3VkgVQ6ONz9xBCEFKqU8Mp4ZxBljz1GbIuFYJWRgcGOipLszDT56nK0xJSaVN7ozP1ZelDd6PIixmREFTbQ=="
+    val cassandraEndPoint = ""
+    val cassandraUserName = ""
+    val cassandraPassword = ""
     val spark = SparkHelper
       .intializeSpark(cassandraEndPoint,
         cassandraUserName,
@@ -23,13 +23,14 @@ object TestReader {
     import spark.implicits._
 
 
-    val secret = "Endpoint=sb://rs-eh-ns.servicebus.windows.net/;SharedAccessKeyName=taxi-ride-asa-access-policy;SharedAccessKey=/GjrSZc1uXKlwnrbXikYUEwcC++zE9nGJm4cRmvUlvw=;EntityPath=taxi-ride"
+    val secret = ""
     val rideConnectionString = ConnectionStringBuilder(secret)
       .setEventHubName("taxi-ride")
       .build
 
     val rideEventHubConf = EventHubsConf(rideConnectionString)
       .setStartingPosition(EventPosition.fromStartOfStream)
+      .setConsumerGroup("nithin")
 
     val rideDataFrame = spark.readStream
       .format("eventhubs")
@@ -43,8 +44,13 @@ object TestReader {
     rides.printSchema()
     val mockObjects = rides.map(row => Base64Converter(row)).toDF()
 
+    mockObjects.writeStream.format("console")
+        .outputMode("update")
+        .start()
+        .awaitTermination()
 
-    TestCassandraDriver.saveForeach(mockObjects)
+
+//    TestCassandraDriver.saveForeach(mockObjects)
 
     spark.stop
   }

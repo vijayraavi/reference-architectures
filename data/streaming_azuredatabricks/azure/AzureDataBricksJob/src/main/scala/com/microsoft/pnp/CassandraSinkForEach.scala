@@ -1,12 +1,12 @@
 package com.microsoft.pnp
 
-import org.apache.spark.sql.ForeachWriter
+import org.apache.spark.sql.{ForeachWriter, SparkSession}
 
 class CassandraSinkForeach() extends ForeachWriter[org.apache.spark.sql.Row] {
   // This class implements the interface ForeachWriter, which has methods that get called
   // whenever there is a sequence of rows generated as output
 
-  var cassandraDriver: CassandraDriver = null;
+  var cassandraDriver = new CassandraDriver()
 
   def open(partitionId: Long, version: Long): Boolean = {
     // open connection
@@ -16,14 +16,21 @@ class CassandraSinkForeach() extends ForeachWriter[org.apache.spark.sql.Row] {
 
   def process(record: org.apache.spark.sql.Row) = {
     println(s"Process new $record")
-    if (cassandraDriver == null) {
+
+    if(cassandraDriver==null){
       cassandraDriver = new CassandraDriver()
     }
     cassandraDriver.connector.withSessionDo(session =>
       session.execute(
-        s"""
-       insert into ${cassandraDriver.namespace}.${cassandraDriver.foreachTableSink} (pickupneighborhood, windowstart,windowend,ridecount,totalfareamount,totaltipamount)
-       values('${record(0)}', '${record(1)}', '${record(2)}', '${record(3)}', '${record(4)}', '${record(5)}')""")
+//        s"""
+        //       insert into ${cassandraDriver.namespace}.${cassandraDriver.foreachTableSink} (pickupneighborhood, windowstart,windowend,ridecount,totalfareamount,totaltipamount)
+        //       values('${record(0)}', '${record(1)}', '${record(2)}', '${record(3)}', '${record(4)}', '${record(5)}')"""
+
+    s"""
+       |insert into ${cassandraDriver.namespace}.${cassandraDriver.foreachTableSink} (field1, field2)
+       |       values('${record(0)}', '${record(1)}')"""
+
+      )
     )
   }
 

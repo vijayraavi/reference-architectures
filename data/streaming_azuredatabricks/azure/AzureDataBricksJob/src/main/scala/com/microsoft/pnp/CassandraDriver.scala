@@ -1,17 +1,17 @@
 package com.microsoft.pnp
 
 import com.datastax.spark.connector.cql.CassandraConnector
+import org.apache.spark.sql.SparkSession
 
 class CassandraDriver {
 
-  val spark = SparkHelper.getSparkSession()
+  val sc = SparkSession.builder().getOrCreate().sparkContext
 
-  import spark.implicits._
+  sc.getConf.getAll.foreach(x => System.out.println(x))
 
-  val connector = CassandraConnector(spark.sparkContext.getConf)
-
-  val namespace = "newyorktaxi"
-  val foreachTableSink = "neighborhooddata"
+  val connector = CassandraConnector(sc.getConf)
+  val namespace = "nsp"
+  val foreachTableSink = "test"
 
 
 }
