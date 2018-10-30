@@ -22,7 +22,7 @@ class CassandraSinkForeach() extends ForeachWriter[org.apache.spark.sql.Row] {
     cassandraDriver.connector.withSessionDo(session =>
       session.execute(
         s"""
-       insert into ${cassandraDriver.namespace}.${cassandraDriver.foreachTableSink} (pickupNeighborhood, windowstart,windowend,ridecount,totalfareamount,totaltipamount)
+       insert into ${cassandraDriver.namespace}.${cassandraDriver.foreachTableSink} (pickupneighborhood, windowstart,windowend,ridecount,totalfareamount,totaltipamount)
        values('${record(0)}', '${record(1)}', '${record(2)}', '${record(3)}', '${record(4)}', '${record(5)}')""")
     )
   }

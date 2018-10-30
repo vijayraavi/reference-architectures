@@ -46,19 +46,20 @@ object TaxiCabReader {
     val conf = new JobConfiguration(args)
 
 
-    val rideEventHubConnectionString = getSecret(
-      conf.secretScope(), conf.taxiRideEventHubSecretName())
-    val fareEventHubConnectionString = getSecret(
-      conf.secretScope(), conf.taxiFareEventHubSecretName())
+        val rideEventHubConnectionString = getSecret(
+          conf.secretScope(), conf.taxiRideEventHubSecretName())
+        val fareEventHubConnectionString = getSecret(
+          conf.secretScope(), conf.taxiFareEventHubSecretName())
 
-    val cassandraEndPoint = getSecret(
-      conf.secretScope(), conf.cassandraConnectionHostSecretName())
-    val cassandraUserName = getSecret(
-      conf.secretScope(), conf.cassandraUserSecretName())
-    val cassandraPassword = getSecret(
-      conf.secretScope(), conf.cassandraPasswordSecretName())
+        val cassandraEndPoint = getSecret(
+          conf.secretScope(), conf.cassandraConnectionHostSecretName())
+        val cassandraUserName = getSecret(
+          conf.secretScope(), conf.cassandraUserSecretName())
+        val cassandraPassword = getSecret(
+          conf.secretScope(), conf.cassandraPasswordSecretName())
 
     // DBFS root for our job
+
 
     val dbfsRoot = "dbfs:/azure-databricks-job"
     val checkpointRoot = s"${dbfsRoot}/checkpoint"
@@ -216,7 +217,7 @@ object TaxiCabReader {
       .outputMode(OutputMode.Append)
       .foreach(new CassandraSinkForeach())
       .queryName("events_per_window")
-      .format("console")
+//      .format("console")
       .start
       .awaitTermination()
 
