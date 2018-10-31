@@ -2,15 +2,16 @@ package com.microsoft.pnp
 
 import java.sql.Timestamp
 
+import com.datastax.spark.connector.cql.CassandraConnector
 import com.microsoft.pnp.spark.StreamingMetricsListener
+import org.apache.spark.{SparkConf, SparkEnv}
 import org.apache.spark.eventhubs.{EventHubsConf, EventPosition}
 import org.apache.spark.metrics.source.{AppAccumulators, AppMetrics}
 import org.apache.spark.sql.catalyst.expressions.{CsvToStructs, Expression}
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.streaming.{GroupState, OutputMode}
+import org.apache.spark.sql.streaming.GroupState
 import org.apache.spark.sql.types.{StringType, StructType}
 import org.apache.spark.sql.{Column, SparkSession}
-import org.apache.spark.{SparkConf, SparkEnv}
 
 case class InputRow(
                      medallion: Long,
@@ -49,25 +50,59 @@ object TaxiCabReader {
     val conf = new JobConfiguration(args)
 
 
-        val rideEventHubConnectionString = getSecret(
-          conf.secretScope(), conf.taxiRideEventHubSecretName())
-        val fareEventHubConnectionString = getSecret(
-          conf.secretScope(), conf.taxiFareEventHubSecretName())
-
-        val cassandraEndPoint = getSecret(
-          conf.secretScope(), conf.cassandraConnectionHostSecretName())
-        val cassandraUserName = getSecret(
-          conf.secretScope(), conf.cassandraUserSecretName())
-        val cassandraPassword = getSecret(
-          conf.secretScope(), conf.cassandraPasswordSecretName())
+    //    val rideEventHubConnectionString = getSecret(
+    //      conf.secretScope(), conf.taxiRideEventHubSecretName())
+    //    val fareEventHubConnectionString = getSecret(
+    //      conf.secretScope(), conf.taxiFareEventHubSecretName())
+    //
+    //    val cassandraEndPoint = getSecret(
+    //      conf.secretScope(), conf.cassandraConnectionHostSecretName())
+    //    val cassandraUserName = getSecret(
+    //      conf.secretScope(), conf.cassandraUserSecretName())
+    //    val cassandraPassword = getSecret(
+    //      conf.secretScope(), conf.cassandraPasswordSecretName())
 
     // DBFS root for our job
 
 
-    val dbfsRoot = "dbfs:/azure-databricks-job"
-    val checkpointRoot = s"${dbfsRoot}/checkpoint"
-    val malformedRoot = s"${dbfsRoot}/malformed"
 
+    val dbfsRoot = "dbfs:/azure-databricks-job"
+    //    val checkpointRoot = s"${dbfsRoot}/checkpoint"
+    //    val malformedRoot = s"${dbfsRoot}/malformed"
+    //
+    //
+    //    var sparkConf = new SparkConf()
+    //      .set("spark.cassandra.connection.host", cassandraEndPoint)
+    //      .set("spark.cassandra.connection.port", "10350")
+    //      .set("spark.cassandra.connection.ssl.enabled", "true")
+    //      .set("spark.cassandra.auth.username", cassandraUserName)
+    //      .set("spark.cassandra.auth.password", cassandraPassword)
+    //      //      .config("spark.cassandra.connection.factory", "com.microsoft.azure.cosmosdb.cassandra.CosmosDbConnectionFactory")
+    //      .set("spark.master", "local[10]")
+    //      .set("spark.cassandra.output.batch.size.rows", "1")
+    //      .set("spark.cassandra.connection.connections_per_executor_max", "2")
+    //      .set("spark.cassandra.output.concurrent.writes", "5")
+    //      .set("spark.cassandra.output.batch.grouping.buffer.size", "300")
+    //      .set("spark.cassandra.connection.keep_alive_ms", "5000")
+    //      .setMaster("local[10]")
+
+
+    //    val spark = SparkSession
+    //      .builder()
+    //      .config("spark.cassandra.connection.host", cassandraEndPoint)
+    //      .config("spark.cassandra.connection.port", "10350")
+    //      .config("spark.cassandra.connection.ssl.enabled", "true")
+    //      .config("spark.cassandra.auth.username", cassandraUserName)
+    //      .config("spark.cassandra.auth.password", cassandraPassword)
+    //      //      .config("spark.cassandra.connection.factory", "com.microsoft.azure.cosmosdb.cassandra.CosmosDbConnectionFactory")
+    //      .config("spark.master", "local[10]")
+    //      .config("spark.cassandra.output.batch.size.rows", "1")
+    //      .config("spark.cassandra.connection.connections_per_executor_max", "2")
+    //      .config("spark.cassandra.output.concurrent.writes", "5")
+    //      .config("spark.cassandra.output.batch.grouping.buffer.size", "300")
+    //      .config("spark.cassandra.connection.keep_alive_ms", "5000")
+    //      .getOrCreate()
+    val spark = SparkSession.builder().config("spark.master", "local[10]").getOrCreate()
 
     var sparkConf = new SparkConf()
       .set("spark.cassandra.connection.host", cassandraEndPoint)
@@ -76,21 +111,32 @@ object TaxiCabReader {
       .set("spark.cassandra.auth.username", cassandraUserName)
       .set("spark.cassandra.auth.password", cassandraPassword)
       //      .config("spark.cassandra.connection.factory", "com.microsoft.azure.cosmosdb.cassandra.CosmosDbConnectionFactory")
-      //      .set("spark.master", "local[10]")
+      .set("spark.master", "local[10]")
       .set("spark.cassandra.output.batch.size.rows", "1")
       .set("spark.cassandra.connection.connections_per_executor_max", "2")
       .set("spark.cassandra.output.concurrent.writes", "5")
       .set("spark.cassandra.output.batch.grouping.buffer.size", "300")
       .set("spark.cassandra.connection.keep_alive_ms", "5000")
-      .setMaster("local[10]")
 
 
-    val spark = SparkSession
-      .builder()
-      .config(sparkConf)
-      .getOrCreate()
+//    spark.conf.set("spark.cassandra.connection.host", cassandraEndPoint)
+//    spark.conf.set("spark.cassandra.connection.port", "10350")
+//    spark.conf.set("spark.cassandra.connection.ssl.enabled", "true")
+//    spark.conf.set("spark.cassandra.auth.username", cassandraUserName)
+//    spark.conf.set("spark.cassandra.auth.password", cassandraPassword)
+//    //      .config("spark.cassandra.connection.factory", "com.microsoft.azure.cosmosdb.cassandra.CosmosDbConnectionFactory")
+//    spark.conf.set("spark.master", "local[10]")
+//    spark.conf.set("spark.cassandra.output.batch.size.rows", "1")
+//    spark.conf.set("spark.cassandra.connection.connections_per_executor_max", "2")
+//    spark.conf.set("spark.cassandra.output.concurrent.writes", "5")
+//    spark.conf.set("spark.cassandra.output.batch.grouping.buffer.size", "300")
+//    spark.conf.set("spark.cassandra.connection.keep_alive_ms", "5000")
 
 
+
+    //    SparkSession.builder().getOrCreate()
+
+    //    val spark = SparkHelper.intializeSpark(cassandraEndPoint,cassandraUserName,cassandraPassword)
 
 
     import spark.implicits._
@@ -236,14 +282,31 @@ object TaxiCabReader {
 
     maxAvgFarePerNeighborhood.printSchema()
 
-    maxAvgFarePerNeighborhood
-      .writeStream
-      .queryName("events_per_window")
-      .outputMode(OutputMode.Append)
-      .foreach(new CassandraSinkForeach())
-      //      .format("console")
-      .start
-      .awaitTermination()
+
+    val connector = CassandraConnector(sparkConf)
+
+
+    for (elem <- spark.sparkContext.getConf.getAll) {
+
+      println(elem._1)
+      println(elem._2)
+    }
+
+    CassandraDriver.saveForeach(maxAvgFarePerNeighborhood, connector)
+
+
+    //    CassandraDriver driver = new CassandraDriver(spark.sparkContext)
+
+    //    driver.saveForeach(maxAvgFarePerNeighborhood)
+
+    //    maxAvgFarePerNeighborhood
+    //      .writeStream
+    //      .queryName("events_per_window")
+    //      .outputMode(OutputMode.Append)
+    //      .foreach(new CassandraSinkForeach())
+    //      //      .format("console")
+    //      .start
+    //      .awaitTermination()
 
     //    invalidRides
     //      .start
@@ -270,4 +333,5 @@ object TaxiCabReader {
 
     Iterator(state)
   }
+
 }
