@@ -8,11 +8,13 @@ import org.apache.spark.eventhubs.{EventHubsConf, EventPosition}
 import org.apache.spark.metrics.source.{AppAccumulators, AppMetrics}
 import org.apache.spark.sql.{Column, Row, SparkSession}
 import org.apache.spark.sql.streaming.{GroupState, GroupStateTimeout, OutputMode}
+import org.apache.spark.sql._
 
 import scala.util.Try
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.catalyst.expressions.{CsvToStructs, Expression}
 import org.apache.spark.sql.types.{StringType, StructType}
+import org.apache.log4j.PropertyConfigurator
 
 case class InputRow(
                      medallion: Long,
@@ -44,12 +46,23 @@ case class NeighborhoodState(neighborhoodName:String, var avgFarePerRide:Double,
 object TaxiCabReader {
   private def withExpr(expr: Expression): Column = new Column(expr)
 
-  def main(args: Array[String]) {
+  def main(args: Array[String])
+  {
+    PropertyConfigurator.configure(getClass.getResource("/dbfs/FileStore/log4j.properties"))
+    //PropertyConfigurator.configure(getClass.getResource("/log4j.properties"))
+
     val conf = new JobConfiguration(args)
     val rideEventHubConnectionString = getSecret(
       conf.secretScope(), conf.taxiRideEventHubSecretName())
     val fareEventHubConnectionString = getSecret(
       conf.secretScope(), conf.taxiFareEventHubSecretName())
+
+    println(rideEventHubConnectionString)
+
+    println(fareEventHubConnectionString)
+
+
+
 
     // DBFS root for our job
     val dbfsRoot = "dbfs:/azure-databricks-job"
@@ -111,15 +124,7 @@ object TaxiCabReader {
         )
       })
 
-    // add rides invalid records as an accumulator
-    // it is processed by metrics registry
-    // it is registered in SparkMetric_CL
 
-    var accInvalidRecords = AppAccumulators.getProcessedInputCountInstance(spark.sparkContext)
-    accInvalidRecords.add(transformedRides
-      .filter($"errorMessage".isNotNull)
-      .select($"messageData")
-      .count())
 
       val invalidRides = transformedRides
           .filter($"errorMessage".isNotNull)
@@ -130,6 +135,30 @@ object TaxiCabReader {
         .format("csv")
         .option("path", s"${malformedRoot}/rides")
         .option("checkpointLocation", s"${checkpointRoot}/rides")
+
+    // add rides invalid records as an accumulator
+    // it is processed by metrics registry
+    // it is registered in SparkMetric_CL
+
+    var accInvalidRecords = AppAccumulators.getProcessedInputCountInstance(spark.sparkContext)
+
+    val invalidRidesacc = transformedRides
+      .filter($"errorMessage".isNotNull)
+      .select($"messageData")
+      .writeStream
+      .foreach(new ForeachWriter[Row] {
+          override def open(partitionId: Long, version: Long): Boolean = {
+          true
+        }
+          override def process(value: Row): Unit = {
+            accInvalidRecords.add(1)
+          }
+          override def close(errorOrNull: Throwable): Unit = { }
+      }
+      )
+      .outputMode("append")
+      .start()
+      .awaitTermination()
 
 
       val rides = transformedRides
@@ -173,17 +202,6 @@ object TaxiCabReader {
         )
       })
 
-    // add fare invalid records as an accumulator. it is
-    // accumulated with ride invalid records
-    // it is processed by metrics registry
-    // it is registered in SparkMetric_CL
-
-    accInvalidRecords = AppAccumulators.getProcessedInputCountInstance(spark.sparkContext)
-    accInvalidRecords.add(transformedFares
-      .filter($"errorMessage".isNotNull)
-      .select($"messageData")
-      .count())
-
 
     val invalidFares = transformedFares
       .filter($"errorMessage".isNotNull)
@@ -195,9 +213,33 @@ object TaxiCabReader {
       .option("path", s"${malformedRoot}/fares")
       .option("checkpointLocation", s"${checkpointRoot}/fares")
 
+    // add fare invalid records as an accumulator. it is
+    // accumulated with ride invalid records
+    // it is processed by metrics registry
+    // it is registered in SparkMetric_CL
 
 
 
+
+    accInvalidRecords = AppAccumulators.getProcessedInputCountInstance(spark.sparkContext)
+
+    val invalidFaressacc = transformedFares
+      .filter($"errorMessage".isNotNull)
+      .select($"messageData")
+      .writeStream
+      .foreach(new ForeachWriter[Row] {
+        override def open(partitionId: Long, version: Long): Boolean = {
+          true
+        }
+        override def process(value: Row): Unit = {
+          accInvalidRecords.add(1)
+        }
+        override def close(errorOrNull: Throwable): Unit = { }
+      }
+      )
+      .outputMode("append")
+      .start()
+      .awaitTermination()
 
 
         val fares = transformedFares
