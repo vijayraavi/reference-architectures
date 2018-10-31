@@ -29,7 +29,7 @@
             <groupId>com.microsoft.azure</groupId>
             <artifactId>azure-eventhubs-spark_2.11</artifactId>
             <version>2.3.5</version>
-            <!--<scope>provided</scope>-->
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
@@ -64,12 +64,13 @@
             <groupId>com.datastax.spark</groupId>
             <artifactId>spark-cassandra-connector_2.11</artifactId>
             <version>2.3.2</version>
+            <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>com.microsoft.azure.cosmosdb</groupId>
-            <artifactId>azure-cosmos-cassandra-spark-helper</artifactId>
-            <version>1.0.0</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.microsoft.azure.cosmosdb</groupId>-->
+            <!--<artifactId>azure-cosmos-cassandra-spark-helper</artifactId>-->
+            <!--<version>1.0.0</version>-->
+        <!--</dependency>-->
     </dependencies>
     <repositories>
         <repository>
