@@ -58,17 +58,10 @@ object TaxiCabReader {
     val cassandraPassword = getSecret(
       conf.secretScope(), conf.cassandraPasswordSecretName())
 
-
-    // DBFS root for our job
-    val dbfsRoot = "dbfs:/azure-databricks-job"
-    val checkpointRoot = s"${dbfsRoot}/checkpoint"
-    val malformedRoot = s"${dbfsRoot}/malformed"
-
     val spark = SparkSession.builder().config("spark.master", "local[10]").getOrCreate()
     import spark.implicits._
 
-
-    // databricks spark session is created upfront . it is not possible to
+    // Databricks spark session is created upfront . it is not possible to
     // update the conf later . hence this conf is just created with values from
     // secrets just for initiating the cassandra driver
     // please note :- when spark submit is used, spark session is created in the main method
@@ -87,7 +80,7 @@ object TaxiCabReader {
       .set("spark.cassandra.output.batch.grouping.buffer.size", "300")
       .set("spark.cassandra.connection.keep_alive_ms", "5000")
 
-    // initializing the connector in the driver . connector is serializable
+    // Initializing the connector in the driver . connector is serializable
     // will be sending it to foreach sink that gets executed in the workers.
     val connector = CassandraConnector(sparkConfForCassandraDriver)
 
@@ -98,6 +91,7 @@ object TaxiCabReader {
 
     @transient lazy val NeighborhoodFinder = GeoFinder.createGeoFinder(
       conf.neighborhoodFileURL())
+
     val neighborhoodFinder = (lon: Double, lat: Double) => {
       NeighborhoodFinder.getNeighborhood(lon, lat).get()
     }
@@ -131,9 +125,7 @@ object TaxiCabReader {
           .cast(StringType)
           .as("messageData"),
         from_json($"body".cast(StringType), RideSchema)
-          .as("ride"),
-        $"enqueuedTime"
-          .as("rideTime"))
+          .as("ride"))
       .transform(ds => {
         ds.withColumn(
           "errorMessage",
@@ -143,23 +135,9 @@ object TaxiCabReader {
         )
       })
 
-    // ways to find invalid rides
-
-    //    val invalidRides = transformedRides
-    //      .filter($"errorMessage".isNotNull)
-    //      .select($"messageData")
-    //      .writeStream
-    //      .outputMode(OutputMode.Append)
-    //      .queryName("invalid_ride_records")
-    //      .format("csv")
-    //      .option("path", s"${malformedRoot}/rides")
-    //      .option("checkpointLocation", s"${checkpointRoot}/rides")
-
-
     val rides = transformedRides
       .filter($"errorMessage".isNull)
       .select(
-        $"rideTime",
         $"ride.*",
         to_neighborhood($"ride.pickupLon", $"ride.pickupLat")
           .as("pickupNeighborhood"),
@@ -175,9 +153,7 @@ object TaxiCabReader {
           .cast(StringType)
           .as("messageData"),
         from_csv($"body".cast(StringType), FareSchema, csvOptions)
-          .as("fare"),
-        $"enqueuedTime"
-          .as("rideTime"))
+          .as("fare"))
       .transform(ds => {
         ds.withColumn(
           "errorMessage",
@@ -197,22 +173,9 @@ object TaxiCabReader {
         )
       })
 
-    // ways to find invalid fares
-    //    val invalidFares = transformedFares
-    //      .filter($"errorMessage".isNotNull)
-    //      .select($"messageData")
-    //      .writeStream
-    //      .outputMode(OutputMode.Append)
-    //      .queryName("invalid_fare_records")
-    //      .format("csv")
-    //      .option("path", s"${malformedRoot}/fares")
-    //      .option("checkpointLocation", s"${checkpointRoot}/fares")
-
-
     val fares = transformedFares
       .filter($"errorMessage".isNull)
       .select(
-        $"rideTime",
         $"fare.*",
         $"pickupTime"
       )
@@ -230,7 +193,6 @@ object TaxiCabReader {
       )
       .select($"window.start", $"window.end", $"pickupNeighborhood", $"rideCount", $"totalFareAmount", $"totalTipAmount")
 
-
     maxAvgFarePerNeighborhood
       .writeStream
       .queryName("maxAvgFarePerNeighborhood_cassandra_insert")
@@ -238,13 +200,6 @@ object TaxiCabReader {
       .foreach(new CassandraSinkForeach(connector))
       .start()
       .awaitTermination()
-
-
-
-    //    invalidRides
-    //      .start
-    //    invalidFares
-    //      .start
   }
 
   def updateNeighborhoodStateWithEvent(state: NeighborhoodState, input: InputRow): NeighborhoodState = {
