@@ -60,7 +60,7 @@ public class GeoFinder implements Serializable {
             logger.warn(String.format("Error searching for coordinate (%f, %f)", longitude, latitude), ex);
         }
 
-        return Optional.of("defaultNeighborhood");
+        return Optional.of("Unknown");
     }
 
     public static GeoFinder createGeoFinder(URL shapeFileUrl) throws IOException {
