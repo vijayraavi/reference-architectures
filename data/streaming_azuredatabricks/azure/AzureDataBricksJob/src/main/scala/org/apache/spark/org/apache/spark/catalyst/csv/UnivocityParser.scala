@@ -205,8 +205,9 @@ class UnivocityParser(
     * the record is malformed).
     */
   // We are going to change this to handle headers
-  //def parse(input: String): InternalRow = convert(tokenizer.parseLine(input))
-  def parse(input: String): InternalRow = convert(tokenizer.parseAll(new StringReader(input)).get(0))
+    def parse(input: String): InternalRow = convert(
+    Try {tokenizer.parseAll(new StringReader(input)).get(0)}.getOrElse(null)
+  )
 
   private val getToken = if (options.columnPruning) {
     (tokens: Array[String], index: Int) => tokens(index)
