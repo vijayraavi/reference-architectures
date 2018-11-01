@@ -12,6 +12,7 @@ import org.apache.spark.sql.streaming.{GroupState, OutputMode}
 import org.apache.spark.sql.types.{StringType, StructType}
 import org.apache.spark.sql.{Column, SparkSession}
 import org.apache.spark.{SparkConf, SparkEnv}
+import org.apache.spark.sql.Row
 
 case class InputRow(
                      medallion: Long,
@@ -85,12 +86,11 @@ object TaxiCabReader {
     val connector = CassandraConnector(sparkConfForCassandraDriver)
 
     @transient val appMetrics = new AppMetrics(spark.sparkContext)
-    appMetrics.registerGauge("metricsregistrytest.processed",
-      AppAccumulators.getProcessedInputCountInstance(spark.sparkContext))
+    appMetrics.registerGauge("metrics.malformedrides", AppAccumulators.getRideInstance(spark.sparkContext))
+    appMetrics.registerGauge("metrics.malformedfares", AppAccumulators.getFareInstance(spark.sparkContext))
     SparkEnv.get.metricsSystem.registerSource(appMetrics)
 
-    @transient lazy val NeighborhoodFinder = GeoFinder.createGeoFinder(
-      conf.neighborhoodFileURL())
+    @transient lazy val NeighborhoodFinder = GeoFinder.createGeoFinder(conf.neighborhoodFileURL())
 
     val neighborhoodFinder = (lon: Double, lat: Double) => {
       NeighborhoodFinder.getNeighborhood(lon, lat).get()
@@ -135,8 +135,18 @@ object TaxiCabReader {
         )
       })
 
+    val malformedRides = AppAccumulators.getRideInstance(spark.sparkContext)
+
     val rides = transformedRides
-      .filter($"errorMessage".isNull)
+      .filter(r => {
+        if(r.isNullAt(r.fieldIndex("errorMessage")) )  {
+          true
+        }
+        else{
+          malformedRides.add(1)
+          false
+        }
+      })
       .select(
         $"ride.*",
         to_neighborhood($"ride.pickupLon", $"ride.pickupLat")
@@ -173,8 +183,19 @@ object TaxiCabReader {
         )
       })
 
+
+    val malformedFares = AppAccumulators.getFareInstance(spark.sparkContext)
+
     val fares = transformedFares
-      .filter($"errorMessage".isNull)
+      .filter(r => {
+        if(r.isNullAt(r.fieldIndex("errorMessage")) )  {
+          true
+        }
+        else{
+          malformedFares.add(1)
+          false
+        }
+      })
       .select(
         $"fare.*",
         $"pickupTime"
@@ -201,6 +222,7 @@ object TaxiCabReader {
       .start()
       .awaitTermination()
   }
+
 
   def updateNeighborhoodStateWithEvent(state: NeighborhoodState, input: InputRow): NeighborhoodState = {
     state.avgFarePerRide = ((state.avgFarePerRide * state.ridesCount) + input.fareAmount) / (state.ridesCount + 1)

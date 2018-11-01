@@ -3,16 +3,28 @@ import org.apache.spark.SparkContext
 import org.apache.spark.util.LongAccumulator
 
 object AppAccumulators {
-  @volatile private var processedInputCountInstance: LongAccumulator = null
+  @volatile private var fareInstance: LongAccumulator = null
+  @volatile private var rideInstance: LongAccumulator = null
 
-  def getProcessedInputCountInstance(sc: SparkContext): LongAccumulator = {
-    if (processedInputCountInstance == null) {
+  def getFareInstance(sc: SparkContext): LongAccumulator = {
+    if (fareInstance == null) {
       synchronized {
-        if (processedInputCountInstance == null) {
-          processedInputCountInstance = sc.longAccumulator("ProcessedInputCount")
+        if (fareInstance == null) {
+          fareInstance = sc.longAccumulator("FareCount")
         }
       }
     }
-    processedInputCountInstance
+    fareInstance
+  }
+
+  def getRideInstance(sc: SparkContext): LongAccumulator = {
+    if (rideInstance == null) {
+      synchronized {
+        if (rideInstance == null) {
+          rideInstance = sc.longAccumulator("RideCount")
+        }
+      }
+    }
+    rideInstance
   }
 }
