@@ -1,9 +1,11 @@
 package com.microsoft.pnp
 
+import java.io.InputStream
 import java.sql.Timestamp
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import com.microsoft.pnp.spark.StreamingMetricsListener
+import com.microsoft.pnp.log4j.LoggingConfiguration
+import com.microsoft.pnp.spark.{StreamingMetricsListener, TryWith}
 import org.apache.spark.eventhubs.{EventHubsConf, EventPosition}
 import org.apache.spark.metrics.source.{AppAccumulators, AppMetrics}
 import org.apache.spark.sql.catalyst.expressions.{CsvToStructs, Expression}
@@ -45,21 +47,31 @@ object TaxiCabReader {
   private def withExpr(expr: Expression): Column = new Column(expr)
 
   def main(args: Array[String]) {
+
+    // Configure our logging
+    TryWith(getClass.getResourceAsStream("/com/microsoft/pnp/azuredatabricksjob/log4j.properties")) {
+      c => {
+        LoggingConfiguration.configure(c)
+      }
+    }
+
     val conf = new JobConfiguration(args)
     val rideEventHubConnectionString = getSecret(
       conf.secretScope(), conf.taxiRideEventHubSecretName())
     val fareEventHubConnectionString = getSecret(
       conf.secretScope(), conf.taxiFareEventHubSecretName())
 
-    // getting cassandra secrets
-    val cassandraEndPoint = getSecret(
-      conf.secretScope(), conf.cassandraConnectionHostSecretName())
+    val cassandraEndPoint = conf.cassandraHost()
+
     val cassandraUserName = getSecret(
       conf.secretScope(), conf.cassandraUserSecretName())
     val cassandraPassword = getSecret(
       conf.secretScope(), conf.cassandraPasswordSecretName())
 
-    val spark = SparkSession.builder().config("spark.master", "local[10]").getOrCreate()
+    val spark = SparkSession
+      .builder
+      .getOrCreate
+
     import spark.implicits._
 
     // Databricks spark session is created upfront . it is not possible to
@@ -218,7 +230,7 @@ object TaxiCabReader {
       .writeStream
       .queryName("maxAvgFarePerNeighborhood_cassandra_insert")
       .outputMode(OutputMode.Append())
-      .foreach(new CassandraSinkForeach(connector))
+      .foreach(new CassandraSinkForeach(connector, conf.cassandraKeySpace(), conf.cassandraTableName()))
       .start()
       .awaitTermination()
   }
