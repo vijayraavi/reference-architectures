@@ -24,8 +24,11 @@ class JobConfiguration(arguments: Seq[String]) extends ScallopConf(arguments) wi
   val taxiRideEventHubSecretName = opt[String](default = Some("taxi-ride"))
   val taxiFareEventHubSecretName = opt[String](default = Some("taxi-fare"))
 
+  val cassandraHost = opt[String]()
+  val cassandraKeySpace = opt[String](default = Some("newyorktaxi"))
+  val cassandraTableName = opt[String](default = Some("neighborhoodstats"))
+
   // cassandra secrets
-  val cassandraConnectionHostSecretName = opt[String](default = Some("cassandra-host"))
   val cassandraUserSecretName = opt[String](default = Some("cassandra-username"))
   val cassandraPasswordSecretName = opt[String](default = Some("cassandra-password"))
 
