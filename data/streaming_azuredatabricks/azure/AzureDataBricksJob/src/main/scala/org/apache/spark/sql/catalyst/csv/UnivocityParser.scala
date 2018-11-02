@@ -20,8 +20,6 @@ package org.apache.spark.sql.catalyst.csv
 import java.io.{InputStream, StringReader}
 import java.math.BigDecimal
 
-import scala.util.Try
-import scala.util.control.NonFatal
 import com.univocity.parsers.csv.CsvParser
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
@@ -29,6 +27,9 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.catalyst.util.{BadRecordException, DateTimeUtils, FailureSafeParser}
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
+
+import scala.util.Try
+import scala.util.control.NonFatal
 
 
 /**

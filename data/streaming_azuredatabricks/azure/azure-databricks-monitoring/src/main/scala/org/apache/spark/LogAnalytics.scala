@@ -33,10 +33,9 @@ trait LogAnalytics {
       val json = event match {
         case e: SparkListenerEvent => Some(JsonProtocol.sparkEventToJson(e))
         case e: StreamingListenerEvent => Some(parse(mapper.writeValueAsString(e)))
-        case e => {
+        case e =>
           logWarning(s"Class '${e.getClass.getCanonicalName}' is not a supported event type")
           None
-        }
       }
       if (json.isDefined) {
         Some(compact(json.get))

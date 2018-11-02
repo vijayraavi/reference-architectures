@@ -1,11 +1,9 @@
 package com.microsoft.pnp
 
-import java.io.InputStream
 import java.sql.Timestamp
 
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.microsoft.pnp.log4j.LoggingConfiguration
-import com.microsoft.pnp.spark.{StreamingMetricsListener, TryWith}
 import org.apache.spark.eventhubs.{EventHubsConf, EventPosition}
 import org.apache.spark.metrics.source.{AppAccumulators, AppMetrics}
 import org.apache.spark.sql.catalyst.expressions.{CsvToStructs, Expression}
@@ -14,7 +12,6 @@ import org.apache.spark.sql.streaming.{GroupState, OutputMode}
 import org.apache.spark.sql.types.{StringType, StructType}
 import org.apache.spark.sql.{Column, SparkSession}
 import org.apache.spark.{SparkConf, SparkEnv}
-import org.apache.spark.sql.Row
 
 case class InputRow(
                      medallion: Long,

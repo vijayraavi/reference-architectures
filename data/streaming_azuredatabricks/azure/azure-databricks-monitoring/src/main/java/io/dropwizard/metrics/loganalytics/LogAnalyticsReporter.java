@@ -242,7 +242,7 @@ public class LogAnalyticsReporter extends ScheduledReporter {
             String json = this.mapper.writer().writeValueAsString(nodes);
             this.logAnalyticsClient.send(json, this.logType);
         } catch (IOException ioe) {
-            System.out.println(ioe);
+            LOGGER.warn("Error reporting metrics", ioe);
         }
     }
 

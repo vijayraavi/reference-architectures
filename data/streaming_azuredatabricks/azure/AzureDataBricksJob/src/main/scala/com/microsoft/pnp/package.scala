@@ -5,8 +5,6 @@ import com.databricks.dbutils_v1.DBUtilsHolder.dbutils.secrets
 
 package object pnp {
 
-  val MaxThresholdBetweenStreams = "50 seconds"
-
   def getSecret(secretScope: String, secretName: String): String = {
     secrets.get(secretScope, secretName)
   }
