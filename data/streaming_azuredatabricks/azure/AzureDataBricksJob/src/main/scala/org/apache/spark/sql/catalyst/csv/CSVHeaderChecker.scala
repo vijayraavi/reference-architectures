@@ -18,7 +18,6 @@
 package org.apache.spark.sql.catalyst.csv
 
 import com.univocity.parsers.csv.CsvParser
-
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType

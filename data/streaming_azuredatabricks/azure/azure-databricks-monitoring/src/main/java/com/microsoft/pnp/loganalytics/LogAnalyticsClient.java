@@ -13,6 +13,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -175,7 +176,7 @@ public class LogAnalyticsClient implements Closeable {
         byte[] decodedBytes = Base64.decodeBase64(primaryKey);
         Mac mac = Mac.getInstance(HashAlgorithm);
         mac.init(new SecretKeySpec(decodedBytes, HashAlgorithm));
-        byte[] hash = mac.doFinal(stringToHash.getBytes("UTF-8"));
+        byte[] hash = mac.doFinal(stringToHash.getBytes(StandardCharsets.UTF_8));
         result = Base64.encodeBase64String(hash);
         return result;
     }

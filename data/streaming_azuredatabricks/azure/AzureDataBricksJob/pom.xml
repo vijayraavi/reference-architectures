@@ -24,6 +24,7 @@
             <groupId>com.microsoft.pnp</groupId>
             <artifactId>azure-databricks-monitoring</artifactId>
             <version>0.9</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.microsoft.azure</groupId>
@@ -101,12 +102,6 @@
                         <configuration>
                             <minimizeJar>true</minimizeJar>
                             <filters>
-                                <filter>
-                                    <artifact>com.microsoft.pnp:azure-databricks-monitoring</artifact>
-                                    <includes>
-                                        <include>**</include>
-                                    </includes>
-                                </filter>
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>

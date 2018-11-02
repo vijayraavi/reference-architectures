@@ -1,4 +1,4 @@
-package com.microsoft.pnp.spark
+package com.microsoft.pnp
 
 import com.microsoft.pnp.slf4j.MDCCloseableFactory
 import org.apache.spark.sql.streaming.StreamingQueryListener
@@ -22,15 +22,13 @@ class StreamingMetricsListener() extends StreamingQueryListener {
     }
 
     catch {
-      case e: Exception => {
-        this.logger.error("onQueryProgress", e)
-      }
+      case e: Exception => this.logger.error("onQueryProgress", e)
     }
   }
 
   override def onQueryTerminated(event: QueryTerminatedEvent): Unit = {
     if (event.exception.nonEmpty) {
-      this.logger.error(event.exception.get);
+      this.logger.error(event.exception.get)
     }
   }
 }
