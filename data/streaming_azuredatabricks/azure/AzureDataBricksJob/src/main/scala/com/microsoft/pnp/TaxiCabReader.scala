@@ -60,6 +60,7 @@ object TaxiCabReader {
       .set("spark.cassandra.output.concurrent.writes", "5")
       .set("spark.cassandra.output.batch.grouping.buffer.size", "300")
       .set("spark.cassandra.connection.keep_alive_ms", "5000")
+      .set("spark.cassandra.connection.factory", "com.microsoft.azure.cosmosdb.cassandra.CosmosDbConnectionFactory")
 
     // Initializing the connector in the driver . connector is serializable
     // will be sending it to foreach sink that gets executed in the workers.
