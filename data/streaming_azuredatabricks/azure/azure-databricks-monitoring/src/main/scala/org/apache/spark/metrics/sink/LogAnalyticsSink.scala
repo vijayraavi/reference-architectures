@@ -20,7 +20,7 @@ private class LogAnalyticsSink(
 
   var reporter = LogAnalyticsReporter.forRegistry(registry)
     .withWorkspaceId(config.workspaceId)
-    .withWorkspaceKey(config.workspaceKey)
+    .withWorkspaceKey(config.secret)
     .withLogType(config.logType)
     .build()
 

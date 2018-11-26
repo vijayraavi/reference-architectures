@@ -3,6 +3,7 @@ package com.microsoft.pnp
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.microsoft.pnp.log4j.LoggingConfiguration
 import org.apache.spark.eventhubs.{EventHubsConf, EventPosition}
+import org.apache.spark.listeners.LogAnalyticsStreamingQueryListener
 import org.apache.spark.metrics.source.{AppAccumulators, AppMetrics}
 import org.apache.spark.sql.catalyst.expressions.{CsvToStructs, Expression}
 import org.apache.spark.sql.functions._
@@ -61,6 +62,7 @@ object TaxiCabReader {
       .set("spark.cassandra.output.batch.grouping.buffer.size", "300")
       .set("spark.cassandra.connection.keep_alive_ms", "5000")
 
+
     // Initializing the connector in the driver . connector is serializable
     // will be sending it to foreach sink that gets executed in the workers.
     val connector = CassandraConnector(sparkConfForCassandraDriver)
@@ -81,7 +83,20 @@ object TaxiCabReader {
       CsvToStructs(schema, options, e.expr)
     }
 
-    spark.streams.addListener(new StreamingMetricsListener())
+    //    spark.streams.addListener(new StreamingMetricsListener())
+
+    val sparkConf = spark.sparkContext.getConf
+
+    println("spark conf that i know of - Start  ")
+    for (elem <- sparkConf.getAll) {
+
+      println(elem._1 + ":::::" + elem._2)
+
+    }
+    println("spark conf that i know of - end  ")
+
+    spark.streams.addListener(new LogAnalyticsStreamingQueryListener(sparkConf))
+
 
     val rideEventHubOptions = EventHubsConf(rideEventHubConnectionString)
       .setConsumerGroup(conf.taxiRideConsumerGroup())

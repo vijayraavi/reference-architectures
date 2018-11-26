@@ -17,7 +17,7 @@ trait LogAnalytics {
   protected val config: LogAnalyticsConfiguration
 
   protected lazy val logAnalyticsClient = new LogAnalyticsClient(
-    config.workspaceId, config.workspaceKey)
+    config.workspaceId, config.secret)
 
   private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
 

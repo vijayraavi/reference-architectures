@@ -7,7 +7,7 @@ import org.apache.spark.internal.Logging
 
 private[spark] trait LogAnalyticsConfiguration extends Logging {
   protected def getWorkspaceId: Option[String]
-  protected def getWorkspaceKey: Option[String]
+  protected def getSecret: Option[String]
   protected def getLogType: String
   protected def getTimestampFieldName: Option[String]
 
@@ -18,8 +18,8 @@ private[spark] trait LogAnalyticsConfiguration extends Logging {
     value.get
   }
 
-  val workspaceKey: String = {
-    val value = getWorkspaceKey
+  val secret: String = {
+    val value = getSecret
     require(value.isDefined, "A Log Analytics Workspace Key is required")
     value.get
   }
@@ -58,7 +58,7 @@ private[spark] class LogAnalyticsSinkConfiguration(properties: Properties)
 
   override def getWorkspaceId: Option[String] = Option(properties.getProperty(LOGANALYTICS_KEY_WORKSPACEID))
 
-  override def getWorkspaceKey: Option[String] = Option(properties.getProperty(LOGANALYTICS_KEY_SECRET))
+  override def getSecret: Option[String] = Option(properties.getProperty(LOGANALYTICS_KEY_SECRET))
 
   override def getLogType: String = properties.getProperty(LOGANALYTICS_KEY_LOGTYPE, LOGANALYTICS_DEFAULT_LOGTYPE)
 

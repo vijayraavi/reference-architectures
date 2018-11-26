@@ -1,26 +1,26 @@
 package org.apache.spark
 
-import java.util.Properties
-import java.util.concurrent.TimeUnit
-
 import org.apache.spark.internal.Logging
 
 private[spark] trait LogAnalyticsConfiguration extends Logging {
   protected def getWorkspaceId: Option[String]
-  protected def getWorkspaceKey: Option[String]
+
+  protected def getSecret: Option[String]
+
   protected def getLogType: String
+
   protected def getTimestampFieldName: Option[String]
 
   val workspaceId: String = {
     val value = getWorkspaceId
-    require (value.isDefined, "A Log Analytics Workspace ID is required")
+    require(value.isDefined, "A Log Analytics Workspace ID is required")
     logInfo(s"Setting workspaceId to ${value.get}")
     value.get
   }
 
-  val workspaceKey: String = {
-    val value = getWorkspaceKey
-    require(value.isDefined, "A Log Analytics Workspace Key is required")
+  val secret: String = {
+    val value = getSecret
+    require(value.isDefined, "A Log Analytics Secret is required")
     value.get
   }
 
@@ -38,42 +38,42 @@ private[spark] trait LogAnalyticsConfiguration extends Logging {
   }
 }
 
-private[spark] object LogAnalyticsSinkConfiguration {
-  private[spark] val LOGANALYTICS_KEY_WORKSPACEID = "workspaceId"
-  private[spark] val LOGANALYTICS_KEY_SECRET = "secret"
-  private[spark] val LOGANALYTICS_KEY_LOGTYPE = "logType"
-  private[spark] val LOGANALYTICS_KEY_TIMESTAMPFIELD = "timestampField"
-  private[spark] val LOGANALYTICS_KEY_PERIOD = "period"
-  private[spark] val LOGANALYTICS_KEY_UNIT = "unit"
 
-  private[spark] val LOGANALYTICS_DEFAULT_LOGTYPE = "SparkMetric"
-  private[spark] val LOGANALYTICS_DEFAULT_PERIOD = "10"
-  private[spark] val LOGANALYTICS_DEFAULT_UNIT = "SECONDS"
+private[spark] object LogAnalyticsListenerConfiguration {
+  private val CONFIG_PREFIX = "spark.logAnalytics"
+
+  private[spark] val WORKSPACE_ID = CONFIG_PREFIX + ".workspaceId"
+
+  // We'll name this secret so Spark will redact it.
+  private[spark] val SECRET = CONFIG_PREFIX + ".secret"
+
+  private[spark] val LOG_TYPE = CONFIG_PREFIX + ".logType"
+
+  private[spark] val DEFAULT_LOG_TYPE = "SparkListenerEvent"
+
+  private[spark] val TIMESTAMP_FIELD_NAME = CONFIG_PREFIX + ".timestampFieldName"
+
+  private[spark] val LOG_BLOCK_UPDATES = CONFIG_PREFIX + ".logBlockUpdates"
+
+  private[spark] val DEFAULT_LOG_BLOCK_UPDATES = false
 }
 
-private[spark] class LogAnalyticsSinkConfiguration(properties: Properties)
+private[spark] class LogAnalyticsListenerConfiguration(sparkConf: SparkConf)
   extends LogAnalyticsConfiguration {
 
-  import LogAnalyticsSinkConfiguration._
+  import LogAnalyticsListenerConfiguration._
 
-  override def getWorkspaceId: Option[String] = Option(properties.getProperty(LOGANALYTICS_KEY_WORKSPACEID))
+  override def getWorkspaceId: Option[String] = sparkConf.getOption(WORKSPACE_ID)
 
-  override def getWorkspaceKey: Option[String] = Option(properties.getProperty(LOGANALYTICS_KEY_SECRET))
+  override def getSecret: Option[String] = sparkConf.getOption(SECRET)
 
-  override def getLogType: String = properties.getProperty(LOGANALYTICS_KEY_LOGTYPE, LOGANALYTICS_DEFAULT_LOGTYPE)
+  override def getLogType: String = sparkConf.get(LOG_TYPE, DEFAULT_LOG_TYPE)
 
-  override def getTimestampFieldName: Option[String] = Option(properties.getProperty(LOGANALYTICS_KEY_TIMESTAMPFIELD, null))
+  override def getTimestampFieldName: Option[String] = sparkConf.getOption(TIMESTAMP_FIELD_NAME)
 
-  val pollPeriod: Int = {
-    val value = properties.getProperty(LOGANALYTICS_KEY_PERIOD, LOGANALYTICS_DEFAULT_PERIOD).toInt
-    logInfo(s"Setting polling period to $value")
-    value
-  }
-
-  val pollUnit: TimeUnit = {
-    val value = TimeUnit.valueOf(
-      properties.getProperty(LOGANALYTICS_KEY_UNIT, LOGANALYTICS_DEFAULT_UNIT).toUpperCase)
-    logInfo(s"Setting polling unit to $value")
+  def logBlockUpdates: Boolean = {
+    val value = sparkConf.getBoolean(LOG_BLOCK_UPDATES, DEFAULT_LOG_BLOCK_UPDATES)
+    logInfo(s"Setting logBlockUpdates to $value")
     value
   }
 }

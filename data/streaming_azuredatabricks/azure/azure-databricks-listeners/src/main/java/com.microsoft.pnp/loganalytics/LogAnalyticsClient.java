@@ -1,4 +1,4 @@
-package org.apache.spark.loganalytics;
+package com.microsoft.pnp.loganalytics;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpHeaders;
