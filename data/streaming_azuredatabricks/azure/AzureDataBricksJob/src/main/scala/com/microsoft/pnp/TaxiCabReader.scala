@@ -83,18 +83,9 @@ object TaxiCabReader {
       CsvToStructs(schema, options, e.expr)
     }
 
-    //    spark.streams.addListener(new StreamingMetricsListener())
+    spark.streams.addListener(new StreamingMetricsListener())
 
     val sparkConf = spark.sparkContext.getConf
-
-    println("spark conf that i know of - Start  ")
-    for (elem <- sparkConf.getAll) {
-
-      println(elem._1 + ":::::" + elem._2)
-
-    }
-    println("spark conf that i know of - end  ")
-
     spark.streams.addListener(new LogAnalyticsStreamingQueryListener(sparkConf))
 
 
