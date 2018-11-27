@@ -1,5 +1,6 @@
 package org.apache.spark
 
+import com.databricks.dbutils_v1.DBUtilsHolder.dbutils.secrets
 import org.apache.spark.internal.Logging
 
 private[spark] trait LogAnalyticsConfiguration extends Logging {
@@ -11,17 +12,41 @@ private[spark] trait LogAnalyticsConfiguration extends Logging {
 
   protected def getTimestampFieldName: Option[String]
 
+  protected val secretScopeAndKeyValidation = "^([a-zA-Z0-9_\\.-]{1,128})\\:([a-zA-Z0-9_\\.-]{1,128})$"
+    .r("scope", "key")
+
   val workspaceId: String = {
     val value = getWorkspaceId
-    require(value.isDefined, "A Log Analytics Workspace ID is required")
-    logInfo(s"Setting workspaceId to ${value.get}")
-    value.get
+    val finalValue = value match {
+      case Some(scopeAndKey) => {
+        secretScopeAndKeyValidation.findFirstMatchIn(scopeAndKey) match {
+          case Some(x) => {
+            secrets.get(x.group("scope"), x.group("key"))
+          }
+          case None => scopeAndKey
+        }
+      }
+      case None => throw new SparkException(s"A Log Analytics Workspace ID is required")
+    }
+    logInfo(s"Setting workspaceId to $finalValue")
+    finalValue
   }
 
   val secret: String = {
     val value = getSecret
-    require(value.isDefined, "A Log Analytics Secret is required")
-    value.get
+    val finalValue = value match {
+      case Some(scopeAndKey) => {
+        secretScopeAndKeyValidation.findFirstMatchIn(scopeAndKey) match {
+          case Some(x) => {
+            secrets.get(x.group("scope"), x.group("key"))
+          }
+          case None => scopeAndKey
+        }
+      }
+      case None => throw new SparkException(s"A Log Analytics Secret is required")
+    }
+    logInfo(s"Setting workspace key to $finalValue")
+    finalValue
   }
 
 
