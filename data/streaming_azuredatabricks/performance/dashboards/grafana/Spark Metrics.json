@@ -617,6 +617,33 @@
           },
           "queryType": "Azure Log Analytics",
           "refId": "A"
+        },
+        {
+          "appInsights": {
+            "groupBy": "none",
+            "metricName": "select",
+            "rawQuery": false,
+            "rawQueryString": "",
+            "spliton": "",
+            "timeGrainType": "auto",
+            "xaxis": "timestamp",
+            "yaxis": ""
+          },
+          "azureLogAnalytics": {
+            "query": "SparkListenerEvent_CL\n| where $__timeFilter()\n| where Event_s contains \"queryprogressevent\"\n| extend sname=strcat(progress_name_s,\"-\",\"numbertriggerexecution\") \n| summarize count(Event_s)  by bin(progress_timestamp_t, 1m), sname\n| order by  progress_timestamp_t  asc  nulls last ",
+            "resultFormat": "time_series",
+            "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
+          },
+          "azureMonitor": {
+            "dimensionFilter": "*",
+            "metricDefinition": "select",
+            "metricName": "select",
+            "resourceGroup": "select",
+            "resourceName": "select",
+            "timeGrain": "auto"
+          },
+          "queryType": "Azure Log Analytics",
+          "refId": "B"
         }
       ],
       "thresholds": [],
@@ -628,7 +655,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": false,
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -641,7 +668,7 @@
         {
           "decimals": null,
           "format": "short",
-          "label": "Rows / Sec",
+          "label": "Rows  Processed",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -1121,169 +1148,7 @@
         },
         {
           "format": "ms",
-          "label": "Latency",
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "ALA",
-      "fill": 0,
-      "gridPos": {
-        "h": 7,
-        "w": 7,
-        "x": 11,
-        "y": 24
-      },
-      "id": 22,
-      "legend": {
-        "alignAsTable": false,
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [
-        {
-          "alias": "TriggerExecution",
-          "yaxis": 2
-        }
-      ],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "appInsights": {
-            "groupBy": "none",
-            "metricName": "select",
-            "rawQuery": false,
-            "rawQueryString": "",
-            "spliton": "",
-            "timeGrainType": "auto",
-            "xaxis": "timestamp",
-            "yaxis": ""
-          },
-          "azureLogAnalytics": {
-            "query": "SparkMetric_CL\n| where $__timeFilter(TimeGenerated)\n| where  name_s  contains \"ExternalShuffle.shuffle-client.usedDirectMemory\"\n| extend sname=split(name_s, \".\")  \n| summarize any(value_d)  by bin(TimeGenerated,  1m), strcat(sname[0],sname[1]) \n| order by TimeGenerated asc  nulls last",
-            "resultFormat": "time_series",
-            "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
-          },
-          "azureMonitor": {
-            "aggOptions": [
-              "None",
-              "Average",
-              "Minimum",
-              "Maximum",
-              "Total",
-              "Count"
-            ],
-            "aggregation": "Total",
-            "alias": "Incoming Messages",
-            "dimension": "",
-            "dimensionFilter": "*",
-            "dimensions": [],
-            "metricDefinition": "Microsoft.EventHub/namespaces",
-            "metricName": "INREQS",
-            "resourceGroup": "hotpath7",
-            "resourceName": "hotpath-ehub-hotpath7",
-            "timeGrain": "PT1M",
-            "timeGrains": [
-              {
-                "text": "auto",
-                "value": "auto"
-              },
-              {
-                "text": "1 minute",
-                "value": "PT1M"
-              },
-              {
-                "text": "5 minutes",
-                "value": "PT5M"
-              },
-              {
-                "text": "15 minutes",
-                "value": "PT15M"
-              },
-              {
-                "text": "30 minutes",
-                "value": "PT30M"
-              },
-              {
-                "text": "1 hour",
-                "value": "PT1H"
-              },
-              {
-                "text": "6 hours",
-                "value": "PT6H"
-              },
-              {
-                "text": "12 hours",
-                "value": "PT12H"
-              },
-              {
-                "text": "1 day",
-                "value": "P1D"
-              }
-            ]
-          },
-          "queryType": "Azure Log Analytics",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Shuffle Memory",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
-      },
-      "transparent": false,
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": null,
-          "format": "bytes",
-          "label": "ShuffleClientDirectMemory",
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "ms",
-          "label": "Latency",
+          "label": "",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -1304,9 +1169,9 @@
       "fill": 1,
       "gridPos": {
         "h": 8,
-        "w": 7,
-        "x": 0,
-        "y": 31
+        "w": 8,
+        "x": 12,
+        "y": 24
       },
       "id": 11,
       "legend": {
@@ -1456,13 +1321,223 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 0,
+        "y": 31
+      },
+      "id": 13,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "appInsights": {
+            "groupBy": "none",
+            "metricName": "select",
+            "rawQuery": false,
+            "rawQueryString": "",
+            "spliton": "",
+            "timeGrainType": "auto",
+            "xaxis": "timestamp",
+            "yaxis": ""
+          },
+          "azureLogAnalytics": {
+            "query": "let results = SparkMetric_CL \n| where $__timeFilter(TimeGenerated)\n| where name_s contains \"executor.deserializetime\" \n| extend sname=split(name_s, \".\") \n| project TimeGenerated , desetime=count_d , executor=strcat(sname[0],sname[1]) ,name_s\n| join kind= inner (\nSparkMetric_CL\n| where $__timeFilter(TimeGenerated)\n| where name_s contains \"executor.RunTime\"\n| extend sname=split(name_s, \".\") \n| project TimeGenerated , runTime=count_d , executor=strcat(sname[0],sname[1]) ,name_s\n) on executor, TimeGenerated;\nresults\n| extend deseUsage=(desetime/runTime)*100\n| summarize deSerializationCpuTime=percentiles(deseUsage,90) by bin(TimeGenerated, 1m), executor\n| order by TimeGenerated asc nulls last ",
+            "resultFormat": "time_series",
+            "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
+          },
+          "azureMonitor": {
+            "dimensionFilter": "*",
+            "metricDefinition": "select",
+            "metricName": "select",
+            "resourceGroup": "select",
+            "resourceName": "select",
+            "timeGrain": "auto"
+          },
+          "queryType": "Azure Log Analytics",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "% Deserialize Cpu",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "percent",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 6,
+        "y": 31
+      },
+      "id": 14,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "appInsights": {
+            "groupBy": "none",
+            "metricName": "select",
+            "rawQuery": false,
+            "rawQueryString": "",
+            "spliton": "",
+            "timeGrainType": "auto",
+            "xaxis": "timestamp",
+            "yaxis": ""
+          },
+          "azureLogAnalytics": {
+            "query": "let results = SparkMetric_CL\n| where $__timeFilter(TimeGenerated)\n| where name_s contains \"executor.resultserializationtime\" \n| extend sname=split(name_s, \".\") \n| project TimeGenerated , setime=count_d , executor=strcat(sname[0],sname[1]) ,name_s\n| join kind= inner (\nSparkMetric_CL\n| where $__timeFilter(TimeGenerated)\n| where name_s contains \"executor.RunTime\"\n| extend sname=split(name_s, \".\") \n| project TimeGenerated , runTime=count_d , executor=strcat(sname[0],sname[1]) ,name_s\n) on executor, TimeGenerated;\nresults\n| extend serUsage=(setime/runTime)*100\n| summarize SerializationCpuTime=percentile(serUsage,90) by bin(TimeGenerated, 1m), executor\n| order by TimeGenerated asc nulls last\n| render timechart ",
+            "resultFormat": "time_series",
+            "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
+          },
+          "azureMonitor": {
+            "dimensionFilter": "*",
+            "metricDefinition": "select",
+            "metricName": "select",
+            "resourceGroup": "select",
+            "resourceName": "select",
+            "timeGrain": "auto"
+          },
+          "queryType": "Azure Log Analytics",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "% Serialize Cpu",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "percent",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
       "datasource": "ALA",
       "fill": 1,
       "gridPos": {
         "h": 8,
         "w": 7,
-        "x": 7,
-        "y": 31
+        "x": 12,
+        "y": 32
       },
       "id": 9,
       "legend": {
@@ -1566,8 +1641,656 @@
       "gridPos": {
         "h": 7,
         "w": 7,
+        "x": 0,
+        "y": 40
+      },
+      "id": 24,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "TriggerExecution",
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "appInsights": {
+            "groupBy": "none",
+            "metricName": "select",
+            "rawQuery": false,
+            "rawQueryString": "",
+            "spliton": "",
+            "timeGrainType": "auto",
+            "xaxis": "timestamp",
+            "yaxis": ""
+          },
+          "azureLogAnalytics": {
+            "query": "let results=SparkMetric_CL\n| where $__timeFilter()\n| where  name_s  contains \"executor.shuffleBytesWritten\"\n| extend sname=split(name_s, \".\") \n| extend executor=strcat(sname[0],sname[1]) \n| summarize MaxShuffleWrites=max(count_d)  by bin(TimeGenerated,  1m), executor \n| order by TimeGenerated asc  nulls last \n| join kind= inner (\n    SparkMetric_CL\n    | where $__timeFilter()\n    | where name_s contains \"executor.shuffleBytesWritten\"\n    | extend sname=split(name_s, \".\") \n    | extend executor=strcat(sname[0],sname[1])\n| summarize MinShuffleWrites=min(count_d)  by bin(TimeGenerated,  1m), executor\n) on executor, TimeGenerated;\nresults\n| extend ShuffleBytesWritten=MaxShuffleWrites-MinShuffleWrites \n| summarize any(ShuffleBytesWritten)   by bin(TimeGenerated,  1m), executor\n| order by TimeGenerated asc nulls last\n",
+            "resultFormat": "time_series",
+            "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
+          },
+          "azureMonitor": {
+            "aggOptions": [
+              "None",
+              "Average",
+              "Minimum",
+              "Maximum",
+              "Total",
+              "Count"
+            ],
+            "aggregation": "Total",
+            "alias": "Incoming Messages",
+            "dimension": "",
+            "dimensionFilter": "*",
+            "dimensions": [],
+            "metricDefinition": "Microsoft.EventHub/namespaces",
+            "metricName": "INREQS",
+            "resourceGroup": "hotpath7",
+            "resourceName": "hotpath-ehub-hotpath7",
+            "timeGrain": "PT1M",
+            "timeGrains": [
+              {
+                "text": "auto",
+                "value": "auto"
+              },
+              {
+                "text": "1 minute",
+                "value": "PT1M"
+              },
+              {
+                "text": "5 minutes",
+                "value": "PT5M"
+              },
+              {
+                "text": "15 minutes",
+                "value": "PT15M"
+              },
+              {
+                "text": "30 minutes",
+                "value": "PT30M"
+              },
+              {
+                "text": "1 hour",
+                "value": "PT1H"
+              },
+              {
+                "text": "6 hours",
+                "value": "PT6H"
+              },
+              {
+                "text": "12 hours",
+                "value": "PT12H"
+              },
+              {
+                "text": "1 day",
+                "value": "P1D"
+              }
+            ]
+          },
+          "queryType": "Azure Log Analytics",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Shuffle IO",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "transparent": false,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": null,
+          "format": "decbytes",
+          "label": "Shuffle Bytes Write",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "ms",
+          "label": "",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "ALA",
+      "fill": 0,
+      "gridPos": {
+        "h": 7,
+        "w": 7,
+        "x": 7,
+        "y": 40
+      },
+      "id": 26,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "TriggerExecution",
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "appInsights": {
+            "groupBy": "none",
+            "metricName": "select",
+            "rawQuery": false,
+            "rawQueryString": "",
+            "spliton": "",
+            "timeGrainType": "auto",
+            "xaxis": "timestamp",
+            "yaxis": ""
+          },
+          "azureLogAnalytics": {
+            "query": "let results=SparkMetric_CL\n| where $__timeFilter()\n| where  name_s  contains \"executor.shuffleTotalBytesRead\"\n| extend sname=split(name_s, \".\") \n| extend executor=strcat(sname[0],sname[1]) \n| summarize MaxShuffleWrites=max(count_d)  by bin(TimeGenerated,  1m), executor \n| order by TimeGenerated asc  nulls last \n| join kind= inner (\n    SparkMetric_CL\n    | where $__timeFilter()\n    | where name_s contains \"executor.shuffleTotalBytesRead\"\n    | extend sname=split(name_s, \".\") \n    | extend executor=strcat(sname[0],sname[1])\n| summarize MinShuffleWrites=min(count_d)  by bin(TimeGenerated,  1m), executor\n) on executor, TimeGenerated;\nresults\n| extend ShuffleBytesWritten=MaxShuffleWrites-MinShuffleWrites \n| summarize any(ShuffleBytesWritten)   by bin(TimeGenerated,  1m), executor\n| order by TimeGenerated asc nulls last\n",
+            "resultFormat": "time_series",
+            "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
+          },
+          "azureMonitor": {
+            "aggOptions": [
+              "None",
+              "Average",
+              "Minimum",
+              "Maximum",
+              "Total",
+              "Count"
+            ],
+            "aggregation": "Total",
+            "alias": "Incoming Messages",
+            "dimension": "",
+            "dimensionFilter": "*",
+            "dimensions": [],
+            "metricDefinition": "Microsoft.EventHub/namespaces",
+            "metricName": "INREQS",
+            "resourceGroup": "hotpath7",
+            "resourceName": "hotpath-ehub-hotpath7",
+            "timeGrain": "PT1M",
+            "timeGrains": [
+              {
+                "text": "auto",
+                "value": "auto"
+              },
+              {
+                "text": "1 minute",
+                "value": "PT1M"
+              },
+              {
+                "text": "5 minutes",
+                "value": "PT5M"
+              },
+              {
+                "text": "15 minutes",
+                "value": "PT15M"
+              },
+              {
+                "text": "30 minutes",
+                "value": "PT30M"
+              },
+              {
+                "text": "1 hour",
+                "value": "PT1H"
+              },
+              {
+                "text": "6 hours",
+                "value": "PT6H"
+              },
+              {
+                "text": "12 hours",
+                "value": "PT12H"
+              },
+              {
+                "text": "1 day",
+                "value": "P1D"
+              }
+            ]
+          },
+          "queryType": "Azure Log Analytics",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Shuffle IO",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "transparent": false,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": null,
+          "format": "decbytes",
+          "label": "Shuffle Bytes Read",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "ms",
+          "label": "Latency",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "ALA",
+      "fill": 0,
+      "gridPos": {
+        "h": 7,
+        "w": 7,
         "x": 14,
-        "y": 31
+        "y": 40
+      },
+      "id": 27,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "TriggerExecution",
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "appInsights": {
+            "groupBy": "none",
+            "metricName": "select",
+            "rawQuery": false,
+            "rawQueryString": "",
+            "spliton": "",
+            "timeGrainType": "auto",
+            "xaxis": "timestamp",
+            "yaxis": ""
+          },
+          "azureLogAnalytics": {
+            "query": "let results=SparkMetric_CL\n| where $__timeFilter()\n| where  name_s  contains \"executor.memoryBytesSpilled\"\n| extend sname=split(name_s, \".\") \n| extend executor=strcat(sname[0],sname[1]) \n| summarize MaxShuffleWrites=max(count_d)  by bin(TimeGenerated,  1m), executor \n| order by TimeGenerated asc  nulls last \n| join kind= inner (\n    SparkMetric_CL\n    | where $__timeFilter()\n    | where name_s contains \"executor.memoryBytesSpilled\"\n    | extend sname=split(name_s, \".\") \n    | extend executor=strcat(sname[0],sname[1])\n| summarize MinShuffleWrites=min(count_d)  by bin(TimeGenerated,  1m), executor\n) on executor, TimeGenerated;\nresults\n| extend ShuffleBytesWritten=MaxShuffleWrites-MinShuffleWrites \n| summarize any(ShuffleBytesWritten)   by bin(TimeGenerated,  1m), executor\n| order by TimeGenerated asc nulls last\n",
+            "resultFormat": "time_series",
+            "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
+          },
+          "azureMonitor": {
+            "aggOptions": [
+              "None",
+              "Average",
+              "Minimum",
+              "Maximum",
+              "Total",
+              "Count"
+            ],
+            "aggregation": "Total",
+            "alias": "Incoming Messages",
+            "dimension": "",
+            "dimensionFilter": "*",
+            "dimensions": [],
+            "metricDefinition": "Microsoft.EventHub/namespaces",
+            "metricName": "INREQS",
+            "resourceGroup": "hotpath7",
+            "resourceName": "hotpath-ehub-hotpath7",
+            "timeGrain": "PT1M",
+            "timeGrains": [
+              {
+                "text": "auto",
+                "value": "auto"
+              },
+              {
+                "text": "1 minute",
+                "value": "PT1M"
+              },
+              {
+                "text": "5 minutes",
+                "value": "PT5M"
+              },
+              {
+                "text": "15 minutes",
+                "value": "PT15M"
+              },
+              {
+                "text": "30 minutes",
+                "value": "PT30M"
+              },
+              {
+                "text": "1 hour",
+                "value": "PT1H"
+              },
+              {
+                "text": "6 hours",
+                "value": "PT6H"
+              },
+              {
+                "text": "12 hours",
+                "value": "PT12H"
+              },
+              {
+                "text": "1 day",
+                "value": "P1D"
+              }
+            ]
+          },
+          "queryType": "Azure Log Analytics",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Shuffle IO",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "transparent": false,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": null,
+          "format": "bytes",
+          "label": "ShuffleMemorySpilled",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "ms",
+          "label": "Latency",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "ALA",
+      "fill": 0,
+      "gridPos": {
+        "h": 7,
+        "w": 7,
+        "x": 0,
+        "y": 47
+      },
+      "id": 22,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [
+        {
+          "alias": "TriggerExecution",
+          "yaxis": 2
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "appInsights": {
+            "groupBy": "none",
+            "metricName": "select",
+            "rawQuery": false,
+            "rawQueryString": "",
+            "spliton": "",
+            "timeGrainType": "auto",
+            "xaxis": "timestamp",
+            "yaxis": ""
+          },
+          "azureLogAnalytics": {
+            "query": "SparkMetric_CL\n| where $__timeFilter(TimeGenerated)\n| where  name_s  contains \"ExternalShuffle.shuffle-client.usedDirectMemory\"\n| extend sname=split(name_s, \".\")  \n| summarize percentile(value_d,90)  by bin(TimeGenerated,  1m), strcat(sname[0],sname[1]) \n| order by TimeGenerated asc  nulls last",
+            "resultFormat": "time_series",
+            "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
+          },
+          "azureMonitor": {
+            "aggOptions": [
+              "None",
+              "Average",
+              "Minimum",
+              "Maximum",
+              "Total",
+              "Count"
+            ],
+            "aggregation": "Total",
+            "alias": "Incoming Messages",
+            "dimension": "",
+            "dimensionFilter": "*",
+            "dimensions": [],
+            "metricDefinition": "Microsoft.EventHub/namespaces",
+            "metricName": "INREQS",
+            "resourceGroup": "hotpath7",
+            "resourceName": "hotpath-ehub-hotpath7",
+            "timeGrain": "PT1M",
+            "timeGrains": [
+              {
+                "text": "auto",
+                "value": "auto"
+              },
+              {
+                "text": "1 minute",
+                "value": "PT1M"
+              },
+              {
+                "text": "5 minutes",
+                "value": "PT5M"
+              },
+              {
+                "text": "15 minutes",
+                "value": "PT15M"
+              },
+              {
+                "text": "30 minutes",
+                "value": "PT30M"
+              },
+              {
+                "text": "1 hour",
+                "value": "PT1H"
+              },
+              {
+                "text": "6 hours",
+                "value": "PT6H"
+              },
+              {
+                "text": "12 hours",
+                "value": "PT12H"
+              },
+              {
+                "text": "1 day",
+                "value": "P1D"
+              }
+            ]
+          },
+          "queryType": "Azure Log Analytics",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Shuffle Memory",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "transparent": false,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": null,
+          "format": "bytes",
+          "label": "ShuffleClientDirectMemory",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "ms",
+          "label": "Latency",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "ALA",
+      "fill": 0,
+      "gridPos": {
+        "h": 7,
+        "w": 7,
+        "x": 7,
+        "y": 47
       },
       "id": 25,
       "legend": {
@@ -1610,7 +2333,7 @@
             "yaxis": ""
           },
           "azureLogAnalytics": {
-            "query": "SparkMetric_CL\n| where $__timeFilter(TimeGenerated)\n| where  name_s  contains \"shuffle-client.usedHeapMemory\"\n| extend sname=split(name_s, \".\")  \n| summarize any(value_d)  by bin(TimeGenerated,  1m), strcat(sname[0],sname[1]) \n| order by TimeGenerated asc  nulls last",
+            "query": "SparkMetric_CL\n| where $__timeFilter(TimeGenerated)\n| where  name_s  contains \"shuffle-client.usedHeapMemory\"\n| extend sname=split(name_s, \".\")  \n| summarize percentile(value_d,90)  by bin(TimeGenerated,  1m), strcat(sname[0],sname[1]) \n| order by TimeGenerated asc  nulls last",
             "resultFormat": "time_series",
             "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
           },
@@ -1729,9 +2452,9 @@
         "h": 7,
         "w": 7,
         "x": 14,
-        "y": 38
+        "y": 47
       },
-      "id": 27,
+      "id": 38,
       "legend": {
         "alignAsTable": false,
         "avg": false,
@@ -1772,7 +2495,7 @@
             "yaxis": ""
           },
           "azureLogAnalytics": {
-            "query": "SparkMetric_CL\n| where $__timeFilter(TimeGenerated)\n| where  name_s  contains \"executor.memoryBytesSpilled\"\n| extend sname=split(name_s, \".\")  \n| summarize any(count_d)  by bin(TimeGenerated,  1m), strcat(sname[0],sname[1]) \n| order by TimeGenerated asc  nulls last",
+            "query": "let results=SparkMetric_CL\n| where $__timeFilter()\n| where  name_s  contains \"executor.diskBytesSpilled\"\n| extend sname=split(name_s, \".\") \n| extend executor=strcat(sname[0],sname[1]) \n| summarize MaxShuffleWrites=max(count_d)  by bin(TimeGenerated,  1m), executor \n| order by TimeGenerated asc  nulls last \n| join kind= inner (\n    SparkMetric_CL\n    | where $__timeFilter()\n    | where name_s contains \"executor.diskBytesSpilled\"\n    | extend sname=split(name_s, \".\") \n    | extend executor=strcat(sname[0],sname[1])\n| summarize MinShuffleWrites=min(count_d)  by bin(TimeGenerated,  1m), executor\n) on executor, TimeGenerated;\nresults\n| extend ShuffleBytesWritten=MaxShuffleWrites-MinShuffleWrites \n| summarize any(ShuffleBytesWritten)   by bin(TimeGenerated,  1m), executor\n| order by TimeGenerated asc nulls last\n",
             "resultFormat": "time_series",
             "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
           },
@@ -1841,7 +2564,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Shuffle Memory",
+      "title": "Shuffle IO",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1860,7 +2583,7 @@
         {
           "decimals": null,
           "format": "bytes",
-          "label": "ShuffleMemorySpilled",
+          "label": "ShuffleDiskBytesSpilled",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -1885,223 +2608,13 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
-      "fill": 1,
-      "gridPos": {
-        "h": 7,
-        "w": 7,
-        "x": 0,
-        "y": 39
-      },
-      "id": 13,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "appInsights": {
-            "groupBy": "none",
-            "metricName": "select",
-            "rawQuery": false,
-            "rawQueryString": "",
-            "spliton": "",
-            "timeGrainType": "auto",
-            "xaxis": "timestamp",
-            "yaxis": ""
-          },
-          "azureLogAnalytics": {
-            "query": "let results = SparkMetric_CL \n| where $__timeFilter(TimeGenerated)\n| where name_s contains \"executor.deserializetime\" \n| extend sname=split(name_s, \".\") \n| project TimeGenerated , desetime=count_d , executor=strcat(sname[0],sname[1]) ,name_s\n| join kind= inner (\nSparkMetric_CL\n| where $__timeFilter(TimeGenerated)\n| where name_s contains \"executor.RunTime\"\n| extend sname=split(name_s, \".\") \n| project TimeGenerated , runTime=count_d , executor=strcat(sname[0],sname[1]) ,name_s\n) on executor, TimeGenerated;\nresults\n| extend deseUsage=(desetime/runTime)*100\n| summarize deSerializationCpuTime=percentiles(deseUsage,90) by bin(TimeGenerated, 1m), executor\n| order by TimeGenerated asc nulls last ",
-            "resultFormat": "time_series",
-            "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
-          },
-          "azureMonitor": {
-            "dimensionFilter": "*",
-            "metricDefinition": "select",
-            "metricName": "select",
-            "resourceGroup": "select",
-            "resourceName": "select",
-            "timeGrain": "auto"
-          },
-          "queryType": "Azure Log Analytics",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "% Deserialize Cpu",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "transparent": true,
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "percent",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fill": 1,
-      "gridPos": {
-        "h": 7,
-        "w": 7,
-        "x": 7,
-        "y": 39
-      },
-      "id": 14,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "appInsights": {
-            "groupBy": "none",
-            "metricName": "select",
-            "rawQuery": false,
-            "rawQueryString": "",
-            "spliton": "",
-            "timeGrainType": "auto",
-            "xaxis": "timestamp",
-            "yaxis": ""
-          },
-          "azureLogAnalytics": {
-            "query": "let results = SparkMetric_CL\n| where $__timeFilter(TimeGenerated)\n| where name_s contains \"executor.resultserializationtime\" \n| extend sname=split(name_s, \".\") \n| project TimeGenerated , setime=count_d , executor=strcat(sname[0],sname[1]) ,name_s\n| join kind= inner (\nSparkMetric_CL\n| where $__timeFilter(TimeGenerated)\n| where name_s contains \"executor.RunTime\"\n| extend sname=split(name_s, \".\") \n| project TimeGenerated , runTime=count_d , executor=strcat(sname[0],sname[1]) ,name_s\n) on executor, TimeGenerated;\nresults\n| extend serUsage=(setime/runTime)*100\n| summarize SerializationCpuTime=percentile(serUsage,90) by bin(TimeGenerated, 1m), executor\n| order by TimeGenerated asc nulls last\n| render timechart ",
-            "resultFormat": "time_series",
-            "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
-          },
-          "azureMonitor": {
-            "dimensionFilter": "*",
-            "metricDefinition": "select",
-            "metricName": "select",
-            "resourceGroup": "select",
-            "resourceName": "select",
-            "timeGrain": "auto"
-          },
-          "queryType": "Azure Log Analytics",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "% Serialize Cpu",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "transparent": true,
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "percent",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": "ALA",
       "fill": 0,
       "gridPos": {
         "h": 7,
         "w": 7,
         "x": 0,
-        "y": 46
+        "y": 54
       },
       "id": 20,
       "legend": {
@@ -2263,169 +2776,7 @@
         "h": 7,
         "w": 7,
         "x": 7,
-        "y": 46
-      },
-      "id": 24,
-      "legend": {
-        "alignAsTable": false,
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [
-        {
-          "alias": "TriggerExecution",
-          "yaxis": 2
-        }
-      ],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "appInsights": {
-            "groupBy": "none",
-            "metricName": "select",
-            "rawQuery": false,
-            "rawQueryString": "",
-            "spliton": "",
-            "timeGrainType": "auto",
-            "xaxis": "timestamp",
-            "yaxis": ""
-          },
-          "azureLogAnalytics": {
-            "query": "SparkMetric_CL\n| where $__timeFilter(TimeGenerated)\n| where  name_s  contains \"executor.shuffleBytesWritten\"\n| extend sname=split(name_s, \".\")  \n| summarize ShuffleBytesWrite=any(count_d)  by bin(TimeGenerated,  1m), strcat(sname[0],sname[1]) \n| order by TimeGenerated asc  nulls last ",
-            "resultFormat": "time_series",
-            "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
-          },
-          "azureMonitor": {
-            "aggOptions": [
-              "None",
-              "Average",
-              "Minimum",
-              "Maximum",
-              "Total",
-              "Count"
-            ],
-            "aggregation": "Total",
-            "alias": "Incoming Messages",
-            "dimension": "",
-            "dimensionFilter": "*",
-            "dimensions": [],
-            "metricDefinition": "Microsoft.EventHub/namespaces",
-            "metricName": "INREQS",
-            "resourceGroup": "hotpath7",
-            "resourceName": "hotpath-ehub-hotpath7",
-            "timeGrain": "PT1M",
-            "timeGrains": [
-              {
-                "text": "auto",
-                "value": "auto"
-              },
-              {
-                "text": "1 minute",
-                "value": "PT1M"
-              },
-              {
-                "text": "5 minutes",
-                "value": "PT5M"
-              },
-              {
-                "text": "15 minutes",
-                "value": "PT15M"
-              },
-              {
-                "text": "30 minutes",
-                "value": "PT30M"
-              },
-              {
-                "text": "1 hour",
-                "value": "PT1H"
-              },
-              {
-                "text": "6 hours",
-                "value": "PT6H"
-              },
-              {
-                "text": "12 hours",
-                "value": "PT12H"
-              },
-              {
-                "text": "1 day",
-                "value": "P1D"
-              }
-            ]
-          },
-          "queryType": "Azure Log Analytics",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Shuffle IO",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
-      },
-      "transparent": false,
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": null,
-          "format": "decbytes",
-          "label": "Shuffle Bytes Write",
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "ms",
-          "label": "",
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "ALA",
-      "fill": 0,
-      "gridPos": {
-        "h": 7,
-        "w": 7,
-        "x": 0,
-        "y": 53
+        "y": 54
       },
       "id": 23,
       "legend": {
@@ -2581,175 +2932,13 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "ALA",
-      "fill": 0,
-      "gridPos": {
-        "h": 7,
-        "w": 7,
-        "x": 7,
-        "y": 53
-      },
-      "id": 26,
-      "legend": {
-        "alignAsTable": false,
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [
-        {
-          "alias": "TriggerExecution",
-          "yaxis": 2
-        }
-      ],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "appInsights": {
-            "groupBy": "none",
-            "metricName": "select",
-            "rawQuery": false,
-            "rawQueryString": "",
-            "spliton": "",
-            "timeGrainType": "auto",
-            "xaxis": "timestamp",
-            "yaxis": ""
-          },
-          "azureLogAnalytics": {
-            "query": "SparkMetric_CL\n| where $__timeFilter(TimeGenerated)\n| where  name_s  contains \"executor.shuffleTotalBytesRead\"\n| extend sname=split(name_s, \".\")  \n| summarize ShuffleBytesWrite=any(count_d)  by bin(TimeGenerated,  1m), strcat(sname[0],sname[1]) \n| order by TimeGenerated asc  nulls last ",
-            "resultFormat": "time_series",
-            "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
-          },
-          "azureMonitor": {
-            "aggOptions": [
-              "None",
-              "Average",
-              "Minimum",
-              "Maximum",
-              "Total",
-              "Count"
-            ],
-            "aggregation": "Total",
-            "alias": "Incoming Messages",
-            "dimension": "",
-            "dimensionFilter": "*",
-            "dimensions": [],
-            "metricDefinition": "Microsoft.EventHub/namespaces",
-            "metricName": "INREQS",
-            "resourceGroup": "hotpath7",
-            "resourceName": "hotpath-ehub-hotpath7",
-            "timeGrain": "PT1M",
-            "timeGrains": [
-              {
-                "text": "auto",
-                "value": "auto"
-              },
-              {
-                "text": "1 minute",
-                "value": "PT1M"
-              },
-              {
-                "text": "5 minutes",
-                "value": "PT5M"
-              },
-              {
-                "text": "15 minutes",
-                "value": "PT15M"
-              },
-              {
-                "text": "30 minutes",
-                "value": "PT30M"
-              },
-              {
-                "text": "1 hour",
-                "value": "PT1H"
-              },
-              {
-                "text": "6 hours",
-                "value": "PT6H"
-              },
-              {
-                "text": "12 hours",
-                "value": "PT12H"
-              },
-              {
-                "text": "1 day",
-                "value": "P1D"
-              }
-            ]
-          },
-          "queryType": "Azure Log Analytics",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Shuffle IO",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "cumulative"
-      },
-      "transparent": false,
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": null,
-          "format": "decbytes",
-          "label": "Shuffle Bytes Read",
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "ms",
-          "label": "Latency",
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": false
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": null,
       "fill": 1,
       "gridPos": {
         "h": 7,
         "w": 7,
         "x": 0,
-        "y": 60
+        "y": 61
       },
       "id": 17,
       "legend": {
@@ -2786,7 +2975,7 @@
             "yaxis": ""
           },
           "azureLogAnalytics": {
-            "query": "taxirides_CL\n| where $__timeFilter(timestamp_t)\n| where Level contains \"Error\"\n| summarize CountExceptions=count(Level) , max(timestamp_t)    \n",
+            "query": "SparkListenerEvent_CL\n| where $__timeFilter()\n| where Level contains \"Error\"\n| summarize CountExceptions=count(Level) , max(timestamp_t)    \n",
             "resultFormat": "time_series",
             "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
           },
@@ -2850,8 +3039,8 @@
       "gridPos": {
         "h": 4,
         "w": 13,
-        "x": 0,
-        "y": 67
+        "x": 8,
+        "y": 61
       },
       "id": 16,
       "links": [],
@@ -2929,7 +3118,7 @@
             "yaxis": ""
           },
           "azureLogAnalytics": {
-            "query": "taxirides_CL\n| where $__timeFilter(TimeGenerated)\n| where Level contains \"Error\"\n| project TimeGenerated , Message  \n",
+            "query": "SparkListenerEvent_CL\n| where $__timeFilter(TimeGenerated)\n| where Level contains \"Error\"\n| project TimeGenerated , Message  \n",
             "resultFormat": "time_series",
             "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
           },
@@ -2951,7 +3140,7 @@
       "type": "table"
     }
   ],
-  "refresh": false,
+  "refresh": "30s",
   "schemaVersion": 16,
   "style": "dark",
   "tags": [],
@@ -2959,8 +3148,8 @@
     "list": []
   },
   "time": {
-    "from": "2018-11-29T19:56:43.000Z",
-    "to": "2018-11-29T23:34:59.000Z"
+    "from": "now-30m",
+    "to": "now"
   },
   "timepicker": {
     "refresh_intervals": [
@@ -2990,5 +3179,5 @@
   "timezone": "",
   "title": "Spark Metrics",
   "uid": "SP3yfcBmz",
-  "version": 223
+  "version": 241
 }
