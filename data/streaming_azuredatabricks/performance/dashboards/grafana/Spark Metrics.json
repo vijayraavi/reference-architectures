@@ -693,15 +693,15 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "ALA",
+      "datasource": null,
       "fill": 1,
       "gridPos": {
-        "h": 8,
-        "w": 11,
+        "h": 9,
+        "w": 12,
         "x": 0,
         "y": 16
       },
-      "id": 29,
+      "id": 42,
       "legend": {
         "avg": false,
         "current": false,
@@ -716,12 +716,12 @@
       "links": [],
       "nullPointMode": "null",
       "percentage": false,
-      "pointradius": 1,
+      "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
@@ -736,67 +736,17 @@
             "yaxis": ""
           },
           "azureLogAnalytics": {
-            "query": "SparkListenerEvent_CL\r\n| where $__timeFilter()\r\n| where Event_s contains \"taskend\" \r\n| extend taskDuration=Task_Info_Finish_Time_d-Task_Info_Launch_Time_d \r\n| summarize sum(taskDuration) by bin(TimeGenerated,  1m), Task_Info_Host_s\r\n| order by TimeGenerated asc nulls last ",
+            "query": "SparkListenerEvent_CL\n| where $__timeFilter()\n| where Event_s contains \"taskend\" \n| extend taskDuration=Task_Info_Finish_Time_d-Task_Info_Launch_Time_d \n| summarize percentile(taskDuration,90) by bin(TimeGenerated,  1m), Task_Info_Host_s\n| order by TimeGenerated asc nulls last ",
             "resultFormat": "time_series",
             "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
           },
           "azureMonitor": {
-            "aggOptions": [
-              "None",
-              "Average",
-              "Minimum",
-              "Maximum",
-              "Total",
-              "Count"
-            ],
-            "aggregation": "Total",
-            "alias": "Incoming Messages",
-            "dimension": "",
             "dimensionFilter": "*",
-            "dimensions": [],
-            "metricDefinition": "Microsoft.EventHub/namespaces",
-            "metricName": "INREQS",
-            "resourceGroup": "hotpath7",
-            "resourceName": "hotpath-ehub-hotpath7",
-            "timeGrain": "PT1M",
-            "timeGrains": [
-              {
-                "text": "auto",
-                "value": "auto"
-              },
-              {
-                "text": "1 minute",
-                "value": "PT1M"
-              },
-              {
-                "text": "5 minutes",
-                "value": "PT5M"
-              },
-              {
-                "text": "15 minutes",
-                "value": "PT15M"
-              },
-              {
-                "text": "30 minutes",
-                "value": "PT30M"
-              },
-              {
-                "text": "1 hour",
-                "value": "PT1H"
-              },
-              {
-                "text": "6 hours",
-                "value": "PT6H"
-              },
-              {
-                "text": "12 hours",
-                "value": "PT12H"
-              },
-              {
-                "text": "1 day",
-                "value": "P1D"
-              }
-            ]
+            "metricDefinition": "select",
+            "metricName": "select",
+            "resourceGroup": "select",
+            "resourceName": "select",
+            "timeGrain": "auto"
           },
           "queryType": "Azure Log Analytics",
           "refId": "A"
@@ -805,13 +755,12 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Sum Task Execution Per Host / Minute",
+      "title": "Task Duration",
       "tooltip": {
         "shared": true,
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -822,8 +771,8 @@
       },
       "yaxes": [
         {
-          "format": "ms",
-          "label": "Task Duration per Host",
+          "format": "dtdurationms",
+          "label": null,
           "logBase": 1,
           "max": null,
           "min": null,
@@ -848,15 +797,15 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "ALA",
+      "datasource": null,
       "fill": 1,
       "gridPos": {
-        "h": 8,
-        "w": 10,
+        "h": 9,
+        "w": 12,
         "x": 12,
         "y": 16
       },
-      "id": 31,
+      "id": 40,
       "legend": {
         "avg": false,
         "current": false,
@@ -871,12 +820,12 @@
       "links": [],
       "nullPointMode": "null",
       "percentage": false,
-      "pointradius": 1,
+      "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
@@ -891,67 +840,17 @@
             "yaxis": ""
           },
           "azureLogAnalytics": {
-            "query": "SparkMetric_CL\r\n| where $__timeFilter()\r\n| extend sname=split(name_s, \".\")\r\n| extend executor=strcat(sname[0],sname[1]) \r\n| where name_s contains \"threadpool.activeTasks\" \r\n| summarize sum(value_d)  by bin(TimeGenerated,  1m), executor\r\n| order by TimeGenerated asc  nulls last ",
+            "query": "SparkMetric_CL\n| where $__timeFilter()\n| extend sname=split(name_s, \".\")\n| extend executor=strcat(sname[0],sname[1]) \n| where name_s contains \"threadpool.activeTasks\" \n| summarize sum(value_d)  by bin(TimeGenerated,  1m), executor\n| order by TimeGenerated asc  nulls last ",
             "resultFormat": "time_series",
             "workspace": "6cdabfff-ca67-46d4-a18c-8e5b2d81b6bf"
           },
           "azureMonitor": {
-            "aggOptions": [
-              "None",
-              "Average",
-              "Minimum",
-              "Maximum",
-              "Total",
-              "Count"
-            ],
-            "aggregation": "Total",
-            "alias": "Incoming Messages",
-            "dimension": "",
             "dimensionFilter": "*",
-            "dimensions": [],
-            "metricDefinition": "Microsoft.EventHub/namespaces",
-            "metricName": "INREQS",
-            "resourceGroup": "hotpath7",
-            "resourceName": "hotpath-ehub-hotpath7",
-            "timeGrain": "PT1M",
-            "timeGrains": [
-              {
-                "text": "auto",
-                "value": "auto"
-              },
-              {
-                "text": "1 minute",
-                "value": "PT1M"
-              },
-              {
-                "text": "5 minutes",
-                "value": "PT5M"
-              },
-              {
-                "text": "15 minutes",
-                "value": "PT15M"
-              },
-              {
-                "text": "30 minutes",
-                "value": "PT30M"
-              },
-              {
-                "text": "1 hour",
-                "value": "PT1H"
-              },
-              {
-                "text": "6 hours",
-                "value": "PT6H"
-              },
-              {
-                "text": "12 hours",
-                "value": "PT12H"
-              },
-              {
-                "text": "1 day",
-                "value": "P1D"
-              }
-            ]
+            "metricDefinition": "select",
+            "metricName": "select",
+            "resourceGroup": "select",
+            "resourceName": "select",
+            "timeGrain": "auto"
           },
           "queryType": "Azure Log Analytics",
           "refId": "A"
@@ -960,13 +859,12 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Active Tasks",
+      "title": "Task per Executor",
       "tooltip": {
         "shared": true,
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -978,7 +876,7 @@
       "yaxes": [
         {
           "format": "short",
-          "label": "# Tasks Per Executor",
+          "label": null,
           "logBase": 1,
           "max": null,
           "min": null,
@@ -1009,7 +907,7 @@
         "h": 7,
         "w": 11,
         "x": 0,
-        "y": 24
+        "y": 25
       },
       "id": 19,
       "legend": {
@@ -1171,7 +1069,7 @@
         "h": 8,
         "w": 8,
         "x": 12,
-        "y": 24
+        "y": 25
       },
       "id": 11,
       "legend": {
@@ -1327,7 +1225,7 @@
         "h": 9,
         "w": 6,
         "x": 0,
-        "y": 31
+        "y": 32
       },
       "id": 13,
       "legend": {
@@ -1432,7 +1330,7 @@
         "h": 9,
         "w": 6,
         "x": 6,
-        "y": 31
+        "y": 32
       },
       "id": 14,
       "legend": {
@@ -1537,7 +1435,7 @@
         "h": 8,
         "w": 7,
         "x": 12,
-        "y": 32
+        "y": 33
       },
       "id": 9,
       "legend": {
@@ -1642,7 +1540,7 @@
         "h": 7,
         "w": 7,
         "x": 0,
-        "y": 40
+        "y": 41
       },
       "id": 24,
       "legend": {
@@ -1804,7 +1702,7 @@
         "h": 7,
         "w": 7,
         "x": 7,
-        "y": 40
+        "y": 41
       },
       "id": 26,
       "legend": {
@@ -1966,7 +1864,7 @@
         "h": 7,
         "w": 7,
         "x": 14,
-        "y": 40
+        "y": 41
       },
       "id": 27,
       "legend": {
@@ -2128,7 +2026,7 @@
         "h": 7,
         "w": 7,
         "x": 0,
-        "y": 47
+        "y": 48
       },
       "id": 22,
       "legend": {
@@ -2290,7 +2188,7 @@
         "h": 7,
         "w": 7,
         "x": 7,
-        "y": 47
+        "y": 48
       },
       "id": 25,
       "legend": {
@@ -2452,7 +2350,7 @@
         "h": 7,
         "w": 7,
         "x": 14,
-        "y": 47
+        "y": 48
       },
       "id": 38,
       "legend": {
@@ -2614,7 +2512,7 @@
         "h": 7,
         "w": 7,
         "x": 0,
-        "y": 54
+        "y": 55
       },
       "id": 20,
       "legend": {
@@ -2776,7 +2674,7 @@
         "h": 7,
         "w": 7,
         "x": 7,
-        "y": 54
+        "y": 55
       },
       "id": 23,
       "legend": {
@@ -2938,7 +2836,7 @@
         "h": 7,
         "w": 7,
         "x": 0,
-        "y": 61
+        "y": 62
       },
       "id": 17,
       "legend": {
@@ -3040,7 +2938,7 @@
         "h": 4,
         "w": 13,
         "x": 8,
-        "y": 61
+        "y": 62
       },
       "id": 16,
       "links": [],
@@ -3148,7 +3046,7 @@
     "list": []
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {
@@ -3179,5 +3077,5 @@
   "timezone": "",
   "title": "Spark Metrics",
   "uid": "SP3yfcBmz",
-  "version": 241
+  "version": 242
 }
